@@ -29,17 +29,17 @@ namespace ServidorConexion
                 // Enter the listening loop.
                 while (true)
                 {
-                    Console.Write("Waiting for a connection... ");
+                    Console.Write("Esperando a conectar... ");
 
                     TcpClient client = server.AcceptTcpClient(); //Aceptamos la conexión entrante
-                    Console.WriteLine("Connected!");
+                    Console.WriteLine("¡Conectado!");
 
                     data = null;
 
                     NetworkStream stream = client.GetStream(); //Obtenemos el stream para lectura y escritura
                     int i = stream.Read(bytes, 0, bytes.Length); //Leemos en el array "bytes" y almacenamos en i el numero de bytes leidos.
                     data = System.Text.Encoding.ASCII.GetString(bytes, 0, i); //Convertimos la cadena
-                    Console.WriteLine("Received: {0}", data); //Mostramos por pantalla el resultado.
+                    Console.WriteLine("Recibido: {0}", data); //Mostramos por pantalla el resultado.
 
                     //Dividimos el mensaje en un array de strings
                     var lista = data.Split(' ');
@@ -103,7 +103,7 @@ namespace ServidorConexion
             }
 
 
-            Console.WriteLine("\nHit enter to continue...");
+            Console.WriteLine("\nPulsa INTRO para continuar...");
             Console.Read();
         }
     }
