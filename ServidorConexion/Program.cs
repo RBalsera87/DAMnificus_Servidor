@@ -1,4 +1,4 @@
-﻿using RestSharp;
+﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -51,25 +51,26 @@ namespace ServidorConexion
                     var ruta = lista[1];
                     //El tercer elemento antes del salto de carro, será el protocolo
                     string protocolo = lista[2].Split('\n')[0];
+                    Console.WriteLine(data);
                     //Finalmente mostramos los datos por pantalla
                     Console.WriteLine("Instruccion: {0}\nRuta: {1}\nProtocolo: {2}", instruccion, ruta, protocolo);
                     byte[] msg;
 
-                    //Comprobamos que estemos recibiendo la peticion de la home
-                    if (ruta.Equals("/"))
+                    //Comprobamos que estemos recibiendo la peticion login
+                    if (ruta.Equals("/login"))
                     {
                         //Leemos todo el contenido del fichero especificado
-                        var fichero = File.ReadAllText("home.html");
+                        //var fichero = File.ReadAllText("home.html");
                         //Redactamos la cabecera de respuesta.
                         string response = "HTTP/1.1 200 OK\r\n\r\n\r\n";
                         //Agregamos a la cabecera la informacion del fichero.
-                        response = response + fichero;
+                        //response = response + fichero;
                         //Mostramos por pantalla el resultado
                         Console.WriteLine("Sent: {0}", response);
                         //Codificamos el texto que hemos cargado en un array de bytes
                         msg = System.Text.Encoding.ASCII.GetBytes(response);
                         //Escribimos en el stream el mensaje codiificado
-                        stream.Write(msg, 0, msg.Length);
+                        stream.Write(msg, 0, msg.Length);                       
                     }
                     else
                     {
