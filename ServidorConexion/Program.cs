@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,6 +14,92 @@ namespace ServidorConexion
     class Program
     {
         static void Main(string[] args)
+        {
+            Console.Write("Esperando a conectar... ");
+            // Create an instance of HTTP Listener class
+            var httpListener = new HttpListener
+            {
+                Prefixes = { "http://localhost:8080/" },
+                
+        };
+
+            httpListener.Start();
+            var context = httpListener.GetContext();
+            var request = context.Request;
+            
+
+            // Waiting synchronously till the request is received from the client for HTTP over port 80
+            while (true)
+            {
+                Console.WriteLine("¡Conectado!");
+                System.IO.Stream body = request.InputStream;
+                System.Text.Encoding encoding = request.ContentEncoding;
+                System.IO.StreamReader reader = new System.IO.StreamReader(body, encoding);
+                if (request.ContentType != null)
+                {
+                    Console.WriteLine("\nClient data content type {0}", request.ContentType);
+                }
+                Console.WriteLine("Client data content length {0}", request.ContentLength64);
+
+                Console.WriteLine("Start of client JSON data:");
+                // Convert the data to a string and display it on the console.
+                string s = reader.ReadToEnd();
+                Console.WriteLine(s);
+
+                Console.WriteLine("End of client data:");
+
+                Console.WriteLine("Parsing the JSON Request Body.....");
+
+                /************************You may have to modify the below based on your JSON in Request Body ***/
+                var objetoJSON = JObject.Parse(s);
+                Console.WriteLine("Peticion : " + (string)objetoJSON["peticion"]);
+                Console.WriteLine("Usuario : " + (string)objetoJSON["usuario"]);
+                Console.WriteLine("Contraseña : " + (string)objetoJSON["clave"]);
+                Console.WriteLine("Token : " + (string)objetoJSON["token"]);
+
+                //Serializa el objeto JSON en un objeto .NET
+                Peticion peticion = objetoJSON.ToObject<Peticion>();
+                Console.WriteLine(peticion.clave); // para comprobar que serializa bien imprimo la clave por ejemplo...
+
+
+                /************************SQL server DB call goes below ************************
+                 * 
+                 * 
+                 * 
+                 * string  connetionString = "Data Source=ServerName;Initial Catalog=DatabaseName;User ID=UserName;Password=Password";
+                 * SqlConnection con = new SqlConnection(connetionString);
+                 * SqlDataReader sqlReader;
+                 * con.Open();
+
+
+                sqlReader = new SqlCommand("select * from Country where city=" + jsonObj["city"], con).ExecuteReader();
+
+                if (sqlReader.HasRows)
+                {
+                    while (sqlReader.Read())
+                    {
+                        Console.WriteLine("CountryName | CountryCode | ZipCode \n {0}  |   {1}  |   {2}", sqlReader.GetInt32(0),
+                        sqlReader.GetString(1), sqlReader.GetInt32(2));
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No rows found.");
+                }
+                sqlReader.Close();
+                *
+                * 
+                * 
+                * 
+                * 
+                * 
+                ---------------------------------------------------------------------------*/
+
+                Console.ReadLine();
+
+            }
+        }
+        static void metodoMainAntiguo()//static void Main(string[] args)
         {
             TcpListener server = null;
             try
