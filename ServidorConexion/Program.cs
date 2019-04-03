@@ -15,9 +15,13 @@ namespace ServidorConexion
     {
         static void Main(string[] args)
         {
-            Console.Write("Esperando a conectar... ");
+            HttpListener httpListener = null;
+            try
+            {
+
+                Console.Write("Esperando a conectar... ");
             // Create an instance of HTTP Listener class
-            var httpListener = new HttpListener
+            httpListener = new HttpListener
             {
                 Prefixes = { "http://localhost:8080/" },
                 
@@ -94,9 +98,22 @@ namespace ServidorConexion
                 * 
                 * 
                 ---------------------------------------------------------------------------*/
-
-                Console.ReadLine();
-
+                Console.WriteLine("\nPulsa INTRO para continuar...");
+                Console.Read();
+            }
+            }
+            catch (SocketException e)
+            {
+                Console.WriteLine("SocketException: {0}", e);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Exception: {0}", e);
+            }
+            finally
+            {
+                // Stop listening for new clients.
+                httpListener.Close();
             }
         }
         static void metodoMainAntiguo()//static void Main(string[] args)
