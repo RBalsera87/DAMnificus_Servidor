@@ -26,7 +26,6 @@ namespace ServidorConexion
 
         public string consultarClave(string usuario)
         {
-            //string token = "";
             conectar();
             MySqlCommand cmd = new MySqlCommand();
             //La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas

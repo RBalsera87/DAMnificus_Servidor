@@ -49,11 +49,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Clave.cs" />
-    <Compile Include="Conexion.cs" />
-    <Compile Include="Peticion.cs" />
+    <Compile Include="Entidades\Clave.cs" />
+    <Compile Include="Negocio\Conexion.cs" />
+    <Compile Include="Negocio\GeneradorTokens.cs" />
+    <Compile Include="Entidades\Peticion.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Entidades\Respuesta.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
