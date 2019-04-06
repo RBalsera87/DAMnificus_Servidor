@@ -19,7 +19,7 @@ namespace ServidorConexion
             try
             {
 
-                Console.Write("Esperando a conectar... ");
+                //Console.Write("Esperando a conectar... ");
             // Create an instance of HTTP Listener class
             httpListener = new HttpListener
             {
@@ -28,13 +28,19 @@ namespace ServidorConexion
         };
 
             httpListener.Start();
-            var context = httpListener.GetContext();
-            var request = context.Request;
-            
+            //var context = httpListener.GetContext();
+            //var request = context.Request;
+            //HttpListenerResponse response = context.Response;
 
-            // Waiting synchronously till the request is received from the client for HTTP over port 80
-            while (true)
-            {
+
+                // Waiting synchronously till the request is received from the client for HTTP over port 80
+                while (true)
+            {   //Meto las siguientes cuatro lineas en el bucle porque al estar fuera repite el bucle 
+                //ya que no vuelve a esperar ninguna conexión y al dar la segunda vuelta pierde el json y peta
+                Console.Write("Esperando a conectar... ");
+                var context = httpListener.GetContext();
+                var request = context.Request;
+                HttpListenerResponse response = context.Response;
                 Console.WriteLine("¡Conectado!");
                 System.IO.Stream body = request.InputStream;
                 System.Text.Encoding encoding = request.ContentEncoding;
@@ -63,43 +69,82 @@ namespace ServidorConexion
 
                 //Serializa el objeto JSON en un objeto .NET
                 Peticion peticion = objetoJSON.ToObject<Peticion>();
-                Console.WriteLine(peticion.clave); // para comprobar que serializa bien imprimo la clave por ejemplo...
-
-
-                /************************SQL server DB call goes below ************************
-                 * 
-                 * 
-                 * 
-                 * string  connetionString = "Data Source=ServerName;Initial Catalog=DatabaseName;User ID=UserName;Password=Password";
-                 * SqlConnection con = new SqlConnection(connetionString);
-                 * SqlDataReader sqlReader;
-                 * con.Open();
-
-
-                sqlReader = new SqlCommand("select * from Country where city=" + jsonObj["city"], con).ExecuteReader();
-
-                if (sqlReader.HasRows)
-                {
-                    while (sqlReader.Read())
+                Conexion conex = new Conexion();
+                //Crea variable string de respuesta para el cliente
+                string responseString = "";
+                
+                    
+                //Consulta la clave del usuario en la BD si clave es null retorna "sal" al cliente si no comprueba
+                //si la clave es la misma y retorna "Token" falta hacer JSON
+                if(peticion.clave == null)
                     {
-                        Console.WriteLine("CountryName | CountryCode | ZipCode \n {0}  |   {1}  |   {2}", sqlReader.GetInt32(0),
-                        sqlReader.GetString(1), sqlReader.GetInt32(2));
+                        //Consulta clave 
+                        string ClaveEncriptada = conex.consultarClave(peticion.usuario);
+                        if(!ClaveEncriptada.Equals("null"))
+                        {   
+                            //Retorna sal
+                            responseString = Clave.getSal(ClaveEncriptada);
+                        }
+                        else
+                        {
+                            //Retorna null
+                            responseString = (ClaveEncriptada);
+                        }
+                        
+                        
                     }
-                }
-                else
-                {
-                    Console.WriteLine("No rows found.");
-                }
-                sqlReader.Close();
-                *
-                * 
-                * 
-                * 
-                * 
-                * 
-                ---------------------------------------------------------------------------*/
-                Console.WriteLine("\nPulsa INTRO para continuar...");
-                Console.Read();
+                    else
+                    {   
+                        //Consulta clave
+                        string ClaveEncriptada = conex.consultarClave(peticion.usuario);
+                        //Conprueba que la clave el la misma
+                        bool isValid = Clave.validarClave(peticion.clave, ClaveEncriptada);
+                        responseString = (isValid ? "BIENVENIDO " : "Contraseña incorrecta");
+                    }
+                
+                //Convierte a array de Bytes
+                byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
+                response.ContentLength64 = buffer.Length;
+                System.IO.Stream output = response.OutputStream;
+                //Envia respuesta(Clave) al cliente
+                output.Write(buffer, 0, buffer.Length);
+                // Cierra output stream.
+                output.Close();
+
+
+                    /************************SQL server DB call goes below ************************
+                     * 
+                     * 
+                     * 
+                     * string  connetionString = "Data Source=ServerName;Initial Catalog=DatabaseName;User ID=UserName;Password=Password";
+                     * SqlConnection con = new SqlConnection(connetionString);
+                     * SqlDataReader sqlReader;
+                     * con.Open();
+
+
+                    sqlReader = new SqlCommand("select * from Country where city=" + jsonObj["city"], con).ExecuteReader();
+
+                    if (sqlReader.HasRows)
+                    {
+                        while (sqlReader.Read())
+                        {
+                            Console.WriteLine("CountryName | CountryCode | ZipCode \n {0}  |   {1}  |   {2}", sqlReader.GetInt32(0),
+                            sqlReader.GetString(1), sqlReader.GetInt32(2));
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("No rows found.");
+                    }
+                    sqlReader.Close();
+                    *
+                    * 
+                    * 
+                    * 
+                    * 
+                    * 
+                    ---------------------------------------------------------------------------*/
+                 
             }
             }
             catch (SocketException e)

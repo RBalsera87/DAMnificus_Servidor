@@ -6,6 +6,8 @@ namespace ServidorConexion
     {
         private string conex;
         private MySqlConnection conec;
+
+       
         public Conexion() { }
 
         private void conectar()
@@ -22,28 +24,28 @@ namespace ServidorConexion
             }
         }
 
-        public string validar(string usuario, string pass)
+        public string consultarClave(string usuario)
         {
-            string token = "";
+            //string token = "";
             conectar();
             MySqlCommand cmd = new MySqlCommand();
-            cmd.CommandText = "Select * from credenciales where codigo=@cod and pass=@pass"; //esto hay que adaptarlo para el hash y la sal
+            //La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas
+            cmd.CommandText = "Select pass from usuarios where BINARY usuario=@cod "; 
             cmd.Parameters.AddWithValue("@cod", usuario);
-            cmd.Parameters.AddWithValue("@pass", pass);
+            //cmd.Parameters.AddWithValue("@pass", pass);
             cmd.Connection = conec;
             MySqlDataReader login = cmd.ExecuteReader();
             if (login.Read())
             {
+                string clave = login.GetString(0);
                 conec.Close();
-                return token;
+                return clave;
             }
             else
             {
                 conec.Close();
-                return null;
+                return "null";
             }
         }
-
-
     }
 }
