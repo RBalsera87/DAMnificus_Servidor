@@ -64,8 +64,8 @@ namespace ServidorConexion
                         Console.WriteLine("Recibida peticion de sal por el usuario {0}", peticionActual.usuario);
                         //Consulta clave 
                         claveEncriptada = conex.consultaPeticion(peticionActual);
-                        if(!claveEncriptada.Equals("null"))
-                        { 
+                        if (!claveEncriptada.Equals("null"))
+                        {
                             Console.WriteLine("Respondiendo con SALT\nEsperando peticion login...");
                             enviarRespuesta("usuarioEncontrado", null, Clave.getSal(claveEncriptada), response);
                         }
@@ -74,7 +74,7 @@ namespace ServidorConexion
                             Console.WriteLine("Respuesta: No se ha encontrado el usuario en la BBDD");
                             enviarRespuesta("noExisteUsuario", null, null, response);
                         }
-                        
+
                     }
                     else if (peticionActual.peticion.Equals("login"))
                     {
@@ -86,7 +86,14 @@ namespace ServidorConexion
                         if (claveValida)
                         {
                             Console.WriteLine("La contraseña es valida");
-                            String token = GeneradorTokens.GenerarToken(64);
+                            string token = GeneradorTokens.GenerarToken(64);
+                            if (conex.actualizarTokenEnBBDD(token, peticionActual.usuario))
+                            {
+                                Console.WriteLine("Token guardado en BD existósamente");
+                            }else
+                            {
+                                Console.WriteLine("¡ATENCIóN! Error al guardar token en BD");
+                            }
                             Console.WriteLine("Enviando token: {0}", token);
                             enviarRespuesta("passValida", token, null, response);
                         }
@@ -95,9 +102,21 @@ namespace ServidorConexion
                             Console.WriteLine("Contraseña no valida");
                             enviarRespuesta("passNoValida", null, null, response);
                         }
-                        
-                    }
 
+                    }
+                    else if (peticionActual.peticion.Equals("borrarToken"))
+                    {
+                        if (conex.actualizarTokenEnBBDD("", peticionActual.usuario))
+                        {
+                            enviarRespuesta("tokenBorrado", null, null, response);
+                            Console.WriteLine("Token del usuario {0} borrado con éxito de la BD", peticionActual.usuario);
+                        }
+                        else
+                        {
+                            enviarRespuesta("error", null, null, response);
+                            Console.WriteLine("¡ATENCIóN! Problema al borrar el token del usuario {0}", peticionActual.usuario);
+                        }
+                    }
                 }
             }
             catch (SocketException e)
