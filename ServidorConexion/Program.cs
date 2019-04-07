@@ -63,18 +63,16 @@ namespace ServidorConexion
                     {
                         Console.WriteLine("Recibida peticion de sal por el usuario {0}", peticionActual.usuario);
                         //Consulta clave 
-                        claveEncriptada = conex.consultarClave(peticionActual.usuario);
+                        claveEncriptada = conex.consultaPeticion(peticionActual);
                         if(!claveEncriptada.Equals("null"))
-                        {
-                            //Retorna sal 
+                        { 
                             Console.WriteLine("Respondiendo con SALT\nEsperando peticion login...");
-                            enviarRespuesta("Salt", null, Clave.getSal(claveEncriptada), response);
+                            enviarRespuesta("usuarioEncontrado", null, Clave.getSal(claveEncriptada), response);
                         }
                         else
                         {
-                            //Retorna null
-                            Console.WriteLine("Respuesta: No se ha encontrado la clave en la BBDD");
-                            enviarRespuesta("Fail", null, null, response);
+                            Console.WriteLine("Respuesta: No se ha encontrado el usuario en la BBDD");
+                            enviarRespuesta("noExisteUsuario", null, null, response);
                         }
                         
                     }
@@ -82,20 +80,20 @@ namespace ServidorConexion
                     {
                         Console.WriteLine("Recibida peticion de login por el usuario {0}", peticionActual.usuario);
                         //Consulta clave
-                        claveEncriptada = conex.consultarClave(peticionActual.usuario);
+                        claveEncriptada = conex.consultaPeticion(peticionActual);
                         //Comprueba que la clave el la misma
                         bool claveValida = Clave.validarClave(peticionActual.clave, claveEncriptada);
                         if (claveValida)
                         {
                             Console.WriteLine("La contraseña es valida");
                             String token = GeneradorTokens.GenerarToken(64);
-                            Console.WriteLine("Enviando token: ", token);
-                            enviarRespuesta("Token", token, null, response);
+                            Console.WriteLine("Enviando token: {0}", token);
+                            enviarRespuesta("passValida", token, null, response);
                         }
                         else
                         {
                             Console.WriteLine("Contraseña no valida");
-                            enviarRespuesta("Fail", null, null, response);
+                            enviarRespuesta("passNoValida", null, null, response);
                         }
                         
                     }
@@ -112,6 +110,7 @@ namespace ServidorConexion
             }
             finally
             {
+                Console.Read();
                 // Stop listening for new clients.
                 httpListener.Close();
             }
