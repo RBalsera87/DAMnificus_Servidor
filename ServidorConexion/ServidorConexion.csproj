@@ -50,6 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Entidades\Clave.cs" />
+    <Compile Include="Negocio\CifradoRespuesta.cs" />
     <Compile Include="Negocio\Conexion.cs" />
     <Compile Include="Negocio\GeneradorTokens.cs" />
     <Compile Include="Entidades\Peticion.cs" />

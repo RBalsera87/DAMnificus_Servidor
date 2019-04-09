@@ -1,8 +1,10 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using ServidorConexion.Negocio;
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ServidorConexion
@@ -53,12 +55,29 @@ namespace ServidorConexion
 
                     //Serializa el objeto JSON en un objeto .NET
                     Peticion peticionActual = objetoJSON.ToObject<Peticion>();
+                    
+                    //Descifra la peticion
+                    if (peticionActual.clave != null)
+                    {                        
+                        peticionActual.clave = CifradoRespuesta.Descifrado(peticionActual.clave, peticionActual.peticion);
+                    }
+                    if (peticionActual.token != null)
+                    {
+                        peticionActual.token = CifradoRespuesta.Descifrado(peticionActual.token, peticionActual.peticion);
+                    }
+                    peticionActual.usuario = CifradoRespuesta.Descifrado(peticionActual.usuario, peticionActual.peticion);
+                    // Para depurar: La mostramos descifrada
+                    Console.WriteLine("Usuario descifrado : " + peticionActual.usuario);
+                    Console.WriteLine("Contraseña descifrada: " + peticionActual.clave);
+                    Console.WriteLine("Token descifrado: " + peticionActual.token);
+
                     Conexion conex = new Conexion();
                     //Crea variable string de respuesta para el cliente
 
                     //Consulta la clave del usuario en la BD si clave es null retorna "sal" al cliente si no comprueba
                     //si la clave es la misma y retorna "Token" falta hacer JSON
                     string claveEncriptada;
+                    
                     if (peticionActual.peticion.Equals("requestSalt"))
                     {
                         Console.WriteLine("Recibida peticion de sal por el usuario {0}", peticionActual.usuario);
@@ -136,16 +155,28 @@ namespace ServidorConexion
         }
         public static async void enviarRespuesta(string resp, string token, string sal, HttpListenerResponse response)
         {
+            string salCifrada = null;
+            string tokenCifrado = null;
+            Console.WriteLine("Token sin cifrar: {0}\nSal sin cifrar: {1}", token, sal);
+            if (sal != null)
+            {
+                salCifrada = CifradoRespuesta.Cifrado(sal, resp);
+            }
+            if (token != null)
+            {
+                tokenCifrado = CifradoRespuesta.Cifrado(token, resp);
+            }
             var respuesta = new Respuesta
             {
                 respuesta = resp,
-                token = token,
-                salt = sal
+                token = tokenCifrado,
+                salt = salCifrada
 
             };
+            Console.WriteLine("Enviando:\nRespuesta: {0}\nTokenCifrado: {1}\nSalCifrada: {2}", respuesta.respuesta, respuesta.token, respuesta.salt);
             // Serializa nuestra clase en una cadena JSON
-            var stringRepsuesta = await Task.Run(() => JsonConvert.SerializeObject(respuesta));
-            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(stringRepsuesta);
+            var stringRespuesta = await Task.Run(() => JsonConvert.SerializeObject(respuesta));
+            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(stringRespuesta);
             response.ContentType = "application/json";           
             response.ContentLength64 = buffer.Length;
             System.IO.Stream output = response.OutputStream;
@@ -153,6 +184,8 @@ namespace ServidorConexion
             output.Write(buffer, 0, buffer.Length);
             // Cierra output stream.
             output.Close();
+            Console.WriteLine("\nENVIADO!");
+
         }
 
 
