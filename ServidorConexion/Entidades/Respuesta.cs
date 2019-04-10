@@ -1,4 +1,6 @@
 ﻿using Newtonsoft.Json;
+using ServidorConexion.Negocio;
+using System.Collections.Generic;
 
 namespace ServidorConexion
 {
@@ -12,5 +14,8 @@ namespace ServidorConexion
 
         [JsonProperty("salt")]
         public string salt { get; set; }
+
+        [JsonProperty("coleccion")]
+        public List<Enlaces> coleccion { get; set; }
     }
 }

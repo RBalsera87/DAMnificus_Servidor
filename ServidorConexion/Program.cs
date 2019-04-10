@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using ServidorConexion.Negocio;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -71,7 +72,8 @@ namespace ServidorConexion
                     Console.WriteLine("Contraseña descifrada: " + peticionActual.clave);
                     Console.WriteLine("Token descifrado: " + peticionActual.token);
 
-                    Conexion conex = new Conexion();
+                    ConexionUsuarios conexUsuarios = new ConexionUsuarios();
+                    ConexionEnlaces conexEnlaces = new ConexionEnlaces();
                     //Crea variable string de respuesta para el cliente
 
                     //Consulta la clave del usuario en la BD si clave es null retorna "sal" al cliente si no comprueba
@@ -82,16 +84,16 @@ namespace ServidorConexion
                     {
                         Console.WriteLine("Recibida peticion de sal por el usuario {0}", peticionActual.usuario);
                         //Consulta clave 
-                        claveEncriptada = conex.consultaPeticion(peticionActual);
+                        claveEncriptada = conexUsuarios.consultaPeticion(peticionActual);
                         if (!claveEncriptada.Equals("null"))
                         {
                             Console.WriteLine("Respondiendo con SALT\nEsperando peticion login...");
-                            enviarRespuesta("usuarioEncontrado", null, Clave.getSal(claveEncriptada), response);
+                            enviarRespuesta("usuarioEncontrado", null, Clave.getSal(claveEncriptada), null, response);
                         }
                         else
                         {
                             Console.WriteLine("Respuesta: No se ha encontrado el usuario en la BBDD");
-                            enviarRespuesta("noExisteUsuario", null, null, response);
+                            enviarRespuesta("noExisteUsuario", null, null, null, response);
                         }
 
                     }
@@ -99,14 +101,14 @@ namespace ServidorConexion
                     {
                         Console.WriteLine("Recibida peticion de login por el usuario {0}", peticionActual.usuario);
                         //Consulta clave
-                        claveEncriptada = conex.consultaPeticion(peticionActual);
+                        claveEncriptada = conexUsuarios.consultaPeticion(peticionActual);
                         //Comprueba que la clave el la misma
                         bool claveValida = Clave.validarClave(peticionActual.clave, claveEncriptada);
                         if (claveValida)
                         {
                             Console.WriteLine("La contraseña es valida");
                             string token = GeneradorTokens.GenerarToken(64);
-                            if (conex.actualizarTokenEnBBDD(token, peticionActual.usuario))
+                            if (conexUsuarios.actualizarTokenEnBBDD(token, peticionActual.usuario))
                             {
                                 Console.WriteLine("Token guardado en BD existósamente");
                             }else
@@ -114,27 +116,34 @@ namespace ServidorConexion
                                 Console.WriteLine("¡ATENCIóN! Error al guardar token en BD");
                             }
                             Console.WriteLine("Enviando token: {0}", token);
-                            enviarRespuesta("passValida", token, null, response);
+                            enviarRespuesta("passValida", token, null, null, response);
                         }
                         else
                         {
                             Console.WriteLine("Contraseña no valida");
-                            enviarRespuesta("passNoValida", null, null, response);
+                            enviarRespuesta("passNoValida", null, null, null, response);
                         }
 
                     }
                     else if (peticionActual.peticion.Equals("borrarToken"))
                     {
-                        if (conex.actualizarTokenEnBBDD("", peticionActual.usuario))
+                        if (conexUsuarios.actualizarTokenEnBBDD("", peticionActual.usuario))
                         {
-                            enviarRespuesta("tokenBorrado", null, null, response);
+                            enviarRespuesta("tokenBorrado", null, null, null, response);
                             Console.WriteLine("Token del usuario {0} borrado con éxito de la BD", peticionActual.usuario);
                         }
                         else
                         {
-                            enviarRespuesta("error", null, null, response);
+                            enviarRespuesta("error", null, null, null, response);
                             Console.WriteLine("¡ATENCIóN! Problema al borrar el token del usuario {0}", peticionActual.usuario);
                         }
+                    }
+                    else if (peticionActual.peticion.Equals("obtenerColeccionEnlaces"))
+                    {
+                        Console.WriteLine("Recibida peticion de enlaces");
+                        List<Enlaces> coleccion = conexEnlaces.obtenerColeccionEnlaces();
+                        enviarRespuesta("coleccionEnviada", null, null,coleccion, response);
+                        Console.WriteLine("Colección enviada al cliente satisfactoriamente");
                     }
                 }
             }
@@ -153,7 +162,7 @@ namespace ServidorConexion
                 httpListener.Close();
             }
         }
-        public static async void enviarRespuesta(string resp, string token, string sal, HttpListenerResponse response)
+        public static async void enviarRespuesta(string resp, string token, string sal, List<Enlaces> colec, HttpListenerResponse response)
         {
             string salCifrada = null;
             string tokenCifrado = null;
@@ -170,7 +179,8 @@ namespace ServidorConexion
             {
                 respuesta = resp,
                 token = tokenCifrado,
-                salt = salCifrada
+                salt = salCifrada,
+                coleccion = colec
 
             };
             Console.WriteLine("Enviando:\nRespuesta: {0}\nTokenCifrado: {1}\nSalCifrada: {2}", respuesta.respuesta, respuesta.token, respuesta.salt);
@@ -179,12 +189,20 @@ namespace ServidorConexion
             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(stringRespuesta);
             response.ContentType = "application/json";           
             response.ContentLength64 = buffer.Length;
-            System.IO.Stream output = response.OutputStream;
-            //Envia respuesta(Clave) al cliente
-            output.Write(buffer, 0, buffer.Length);
-            // Cierra output stream.
-            output.Close();
-            Console.WriteLine("\nENVIADO!");
+            try
+            {
+                System.IO.Stream output = response.OutputStream;
+                //Envia respuesta(Clave) al cliente
+                output.Write(buffer, 0, buffer.Length);
+                // Cierra output stream.
+                output.Close();
+                Console.WriteLine("\nENVIADO!");
+            }
+            catch (System.Net.HttpListenerException e)
+            {
+                Console.WriteLine("\nCliente no disponible");
+            }
+            
 
         }
 

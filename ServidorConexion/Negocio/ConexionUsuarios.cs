@@ -1,15 +1,16 @@
 ﻿using MySql.Data.MySqlClient;
-using System.Data;
+using ServidorConexion.Negocio;
+using System.Collections.Generic;
 
 namespace ServidorConexion
 {   
-    class Conexion
+    class ConexionUsuarios
     {
         private string cadenaConexion;
         private MySqlConnection conexion;
 
        
-        public Conexion() { }
+        public ConexionUsuarios() { }
 
         private void conectar()
         {
@@ -53,7 +54,7 @@ namespace ServidorConexion
                     conexion.Close();
                     return "null";
                 }
-            }else if (peticion.peticion.Equals("otraCosaNoprogramadaTodavia"))
+            }else if (peticion.peticion.Equals(""))
             {
                 return "foo";
             }
@@ -84,5 +85,6 @@ namespace ServidorConexion
                 return false;
             }
         }
+        
     }
 }
