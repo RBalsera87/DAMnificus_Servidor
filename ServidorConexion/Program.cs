@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using EntidadesCompartidas;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using ServidorConexion.Negocio;
 using System;

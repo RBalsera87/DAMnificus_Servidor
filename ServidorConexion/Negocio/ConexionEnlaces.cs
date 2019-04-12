@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using MySql.Data.MySqlClient;
 using ServidorConexion.Negocio;
+using EntidadesCompartidas;
 
 namespace ServidorConexion.Negocio
 {

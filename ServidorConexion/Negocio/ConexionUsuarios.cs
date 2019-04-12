@@ -1,4 +1,5 @@
-﻿using MySql.Data.MySqlClient;
+﻿using EntidadesCompartidas;
+using MySql.Data.MySqlClient;
 using ServidorConexion.Negocio;
 using System.Collections.Generic;
 
