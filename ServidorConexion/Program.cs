@@ -61,13 +61,13 @@ namespace ServidorConexion
                     //Descifra la peticion
                     if (peticionActual.clave != null)
                     {                        
-                        peticionActual.clave = CifradoRespuesta.Descifrado(peticionActual.clave, peticionActual.peticion);
+                        peticionActual.clave = CifradoJson.Descifrado(peticionActual.clave, peticionActual.peticion);
                     }
                     if (peticionActual.token != null)
                     {
-                        peticionActual.token = CifradoRespuesta.Descifrado(peticionActual.token, peticionActual.peticion);
+                        peticionActual.token = CifradoJson.Descifrado(peticionActual.token, peticionActual.peticion);
                     }
-                    peticionActual.usuario = CifradoRespuesta.Descifrado(peticionActual.usuario, peticionActual.peticion);
+                    peticionActual.usuario = CifradoJson.Descifrado(peticionActual.usuario, peticionActual.peticion);
                     // Para depurar: La mostramos descifrada
                     Console.WriteLine("Usuario descifrado : " + peticionActual.usuario);
                     Console.WriteLine("Contraseña descifrada: " + peticionActual.clave);
@@ -170,11 +170,11 @@ namespace ServidorConexion
             Console.WriteLine("Token sin cifrar: {0}\nSal sin cifrar: {1}", token, sal);
             if (sal != null)
             {
-                salCifrada = CifradoRespuesta.Cifrado(sal, resp);
+                salCifrada = CifradoJson.Cifrado(sal, resp);
             }
             if (token != null)
             {
-                tokenCifrado = CifradoRespuesta.Cifrado(token, resp);
+                tokenCifrado = CifradoJson.Cifrado(token, resp);
             }
             var respuesta = new Respuesta
             {
