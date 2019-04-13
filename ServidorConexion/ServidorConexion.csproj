@@ -33,6 +33,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="EASendMail45, Version=7.3.1.9, Culture=neutral, PublicKeyToken=88adb80ecd66540b, processorArchitecture=MSIL">
+      <HintPath>..\packages\EASendMail.7.3.1.9\lib\net45\EASendMail45.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="EntidadesCompartidas, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\DAMnificus_Compartido\EntidadesCompartidas\bin\Debug\EntidadesCompartidas.dll</HintPath>
@@ -55,6 +59,7 @@
   <ItemGroup>
     <Compile Include="Negocio\ConexionEnlaces.cs" />
     <Compile Include="Negocio\ConexionUsuarios.cs" />
+    <Compile Include="Negocio\EnviarEmail.cs" />
     <Compile Include="Negocio\GeneradorTokens.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

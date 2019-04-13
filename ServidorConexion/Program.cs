@@ -146,6 +146,15 @@ namespace ServidorConexion
                         enviarRespuesta("coleccionEnviada", null, null,coleccion, response);
                         Console.WriteLine("Colección enviada al cliente satisfactoriamente");
                     }
+                    else if (peticionActual.peticion.Equals("emailRegistro"))
+                    {
+                        string token = GeneradorTokens.GenerarToken(64);
+                        string email = peticionActual.datos["email"];
+                        if(EnviarEmail.registro(email, token))
+                        {
+                            enviarRespuesta("emailConTokenEnviado", token, null, null, response);
+                        }
+                    }
                 }
             }
             catch (SocketException e)
