@@ -13,6 +13,7 @@ namespace ServidorConexion
 {
     class Program
     {
+       
         static void Main(string[] args)
         {
             HttpListener httpListener = null;
@@ -27,37 +28,35 @@ namespace ServidorConexion
                 httpListener.Start();
                 // Waiting synchronously till the request is received from the client for HTTP over port 80
                 while (true)
-                {   
+                {
                     //Meto las siguientes cuatro lineas en el bucle porque al estar fuera repite el bucle 
                     //ya que no vuelve a esperar ninguna conexión y al dar la segunda vuelta pierde el json y peta
-                    Console.Write("Esperando a conectar... ");
+                    escribirEnConsola("INFO","Esperando petición de cliente... ");
                     var context = httpListener.GetContext();
                     var request = context.Request;
                     HttpListenerResponse response = context.Response;
-                    Console.WriteLine("¡Conectado!");
+                    escribirEnConsola("INFO","¡Conectado con un cliente!");
                     System.IO.Stream body = request.InputStream;
                     System.Text.Encoding encoding = request.ContentEncoding;
                     System.IO.StreamReader reader = new System.IO.StreamReader(body, encoding);
                     if (request.ContentType != null)
                     {
-                        Console.WriteLine("\nClient data content type {0}", request.ContentType);
+                        escribirEnConsola("INFO", "Datos recibidos, leyendo...", request.ContentType);
+                        escribirEnConsola("INFO", "Tipo de datos recibidos: {0}", request.ContentType);
                     }
-                    Console.WriteLine("Client data content length {0}", request.ContentLength64);
-                    Console.WriteLine("Start of client JSON data:");
-                    // Convert the data to a string and display it on the console.
-                    string s = reader.ReadToEnd();
-                    Console.WriteLine(s);                
-                    Console.WriteLine("End of client data:");
-                    Console.WriteLine("Parsing the JSON Request Body.....");
-                    var objetoJSON = JObject.Parse(s);
-                    Console.WriteLine("Peticion : " + (string)objetoJSON["peticion"]);
-                    Console.WriteLine("Usuario : " + (string)objetoJSON["usuario"]);
-                    Console.WriteLine("Contraseña : " + (string)objetoJSON["clave"]);
-                    Console.WriteLine("Token : " + (string)objetoJSON["token"]);
+                    // escribirEnConsola("DEBUG", "Start of client JSON data:");                   
+                    string datosJson = reader.ReadToEnd(); // Convert the data to a string and display it on the console.
+                    //escribirEnConsola("DEBUG",s);
+                    //escribirEnConsola("DEBUG", "End of client data:");
+                    escribirEnConsola("DEBUG", "Parseando la petición Json...");
+                    var objetoJSON = JObject.Parse(datosJson);
+                    escribirEnConsola("DEBUG", "Peticion : " + (string)objetoJSON["peticion"]);
+                    //escribirEnConsola("DEBUG", "Usuario : " + (string)objetoJSON["usuario"]);
+                    //escribirEnConsola("DEBUG", "Contraseña : " + (string)objetoJSON["clave"]);
+                    //escribirEnConsola("DEBUG", "Token : " + (string)objetoJSON["token"]);                   
 
-                    //Serializa el objeto JSON en un objeto .NET
-                    Peticion peticionActual = objetoJSON.ToObject<Peticion>();
-                    
+                    Peticion peticionActual = objetoJSON.ToObject<Peticion>(); // Serializa el objeto JSON en un objeto .NET
+
                     //Descifra la peticion
                     if (peticionActual.clave != null)
                     {                        
@@ -68,10 +67,11 @@ namespace ServidorConexion
                         peticionActual.token = CifradoJson.Descifrado(peticionActual.token, peticionActual.peticion);
                     }
                     peticionActual.usuario = CifradoJson.Descifrado(peticionActual.usuario, peticionActual.peticion);
+
                     // Para depurar: La mostramos descifrada
-                    Console.WriteLine("Usuario descifrado : " + peticionActual.usuario);
-                    Console.WriteLine("Contraseña descifrada: " + peticionActual.clave);
-                    Console.WriteLine("Token descifrado: " + peticionActual.token);
+                    escribirEnConsola("DEBUG", "Usuario descifrado : " + peticionActual.usuario);
+                    //escribirEnConsola("DEBUG", "Contraseña descifrada: " + peticionActual.clave);
+                    //escribirEnConsola("DEBUG", "Token descifrado: " + peticionActual.token);
 
                     ConexionUsuarios conexUsuarios = new ConexionUsuarios();
                     ConexionEnlaces conexEnlaces = new ConexionEnlaces();
@@ -83,45 +83,45 @@ namespace ServidorConexion
                     
                     if (peticionActual.peticion.Equals("requestSalt"))
                     {
-                        Console.WriteLine("Recibida peticion de sal por el usuario {0}", peticionActual.usuario);
+                        escribirEnConsola("INFO", "Recibida peticion de sal por el usuario {0}", peticionActual.usuario);
                         //Consulta clave 
                         claveEncriptada = conexUsuarios.consultaPeticion(peticionActual);
                         if (!claveEncriptada.Equals("null"))
                         {
-                            Console.WriteLine("Respondiendo con SALT\nEsperando peticion login...");
+                            escribirEnConsola("INFO", "Respondiendo con SALT y esperando peticion login...");
                             enviarRespuesta("usuarioEncontrado", null, Clave.getSal(claveEncriptada), null, response);
                         }
                         else
                         {
-                            Console.WriteLine("Respuesta: No se ha encontrado el usuario en la BBDD");
+                            escribirEnConsola("INFO", "No se ha encontrado el usuario en la BBDD");
                             enviarRespuesta("noExisteUsuario", null, null, null, response);
                         }
 
                     }
                     else if (peticionActual.peticion.Equals("login"))
                     {
-                        Console.WriteLine("Recibida peticion de login por el usuario {0}", peticionActual.usuario);
+                        escribirEnConsola("INFO", "Recibida peticion de login por el usuario {0}", peticionActual.usuario);
                         //Consulta clave
                         claveEncriptada = conexUsuarios.consultaPeticion(peticionActual);
                         //Comprueba que la clave el la misma
                         bool claveValida = Clave.validarClave(peticionActual.clave, claveEncriptada);
                         if (claveValida)
                         {
-                            Console.WriteLine("La contraseña es valida");
+                            escribirEnConsola("INFO", "La contraseña es valida, generando token...");
                             string token = GeneradorTokens.GenerarToken(64);
                             if (conexUsuarios.actualizarTokenEnBBDD(token, peticionActual.usuario))
                             {
-                                Console.WriteLine("Token guardado en BD existósamente");
+                                escribirEnConsola("INFO", "Token generado y guardado en BD existósamente");
                             }else
                             {
-                                Console.WriteLine("¡ATENCIóN! Error al guardar token en BD");
+                                escribirEnConsola("WARNING", "¡ATENCIóN! Error al guardar token en BD");
                             }
-                            Console.WriteLine("Enviando token: {0}", token);
+                            escribirEnConsola("INFO", "Enviando token al cliente");
                             enviarRespuesta("passValida", token, null, null, response);
                         }
                         else
                         {
-                            Console.WriteLine("Contraseña no valida");
+                            escribirEnConsola("INFO", "Contraseña no valida");
                             enviarRespuesta("passNoValida", null, null, null, response);
                         }
 
@@ -131,42 +131,48 @@ namespace ServidorConexion
                         if (conexUsuarios.actualizarTokenEnBBDD("", peticionActual.usuario))
                         {
                             enviarRespuesta("tokenBorrado", null, null, null, response);
-                            Console.WriteLine("Token del usuario {0} borrado con éxito de la BD", peticionActual.usuario);
+                            escribirEnConsola("INFO", "Token del usuario {0} borrado con éxito de la BD", peticionActual.usuario);
                         }
                         else
                         {
                             enviarRespuesta("error", null, null, null, response);
-                            Console.WriteLine("¡ATENCIóN! Problema al borrar el token del usuario {0}", peticionActual.usuario);
+                            escribirEnConsola("WARNING", "¡ATENCIóN! Problema al borrar el token del usuario {0}", peticionActual.usuario);
                         }
                     }
                     else if (peticionActual.peticion.Equals("obtenerColeccionEnlaces"))
                     {
-                        Console.WriteLine("Recibida peticion de enlaces");
+                        escribirEnConsola("INFO", "Recibida peticion de enlaces");
                         List<Enlaces> coleccion = conexEnlaces.obtenerColeccionEnlaces();
                         enviarRespuesta("coleccionEnviada", null, null,coleccion, response);
-                        Console.WriteLine("Colección enviada al cliente satisfactoriamente");
+                        escribirEnConsola("INFO", "Colección enviada al cliente satisfactoriamente");
                     }
                     else if (peticionActual.peticion.Equals("emailRegistro"))
                     {
+                        escribirEnConsola("INFO", "Recibida petición de token de registro, generando token...");
                         string token = GeneradorTokens.GenerarToken(64);
                         string email = peticionActual.datos["email"];
-                        if(EnviarEmail.registro(email, token))
+                        escribirEnConsola("INFO", "Enviando token a: {0}", email);
+                        if (EnviarEmail.registro(email, token))
                         {
                             enviarRespuesta("emailConTokenEnviado", token, null, null, response);
+                            escribirEnConsola("INFO", "Email enviado!");
                         }
                     }
                 }
             }
             catch (SocketException e)
             {
+                escribirEnConsola("ERROR", "El servidor ha petado debido a:");
                 Console.WriteLine("SocketException: {0}", e);
             }
             catch (Exception e)
             {
+                escribirEnConsola("ERROR", "El servidor ha petado debido a:");
                 Console.WriteLine("Exception: {0}", e);
             }
             finally
             {
+                escribirEnConsola("INFO", "Pulsa una intro para cerrar la ventana");
                 Console.Read();
                 // Stop listening for new clients.
                 httpListener.Close();
@@ -176,7 +182,7 @@ namespace ServidorConexion
         {
             string salCifrada = null;
             string tokenCifrado = null;
-            Console.WriteLine("Token sin cifrar: {0}\nSal sin cifrar: {1}", token, sal);
+            //Console.WriteLine("Token sin cifrar: {0}\nSal sin cifrar: {1}", token, sal);
             if (sal != null)
             {
                 salCifrada = CifradoJson.Cifrado(sal, resp);
@@ -193,7 +199,7 @@ namespace ServidorConexion
                 coleccion = colec
 
             };
-            Console.WriteLine("Enviando:\nRespuesta: {0}\nTokenCifrado: {1}\nSalCifrada: {2}", respuesta.respuesta, respuesta.token, respuesta.salt);
+            //Console.WriteLine("Enviando:\nRespuesta: {0}\nTokenCifrado: {1}\nSalCifrada: {2}", respuesta.respuesta, respuesta.token, respuesta.salt);
             // Serializa nuestra clase en una cadena JSON
             var stringRespuesta = await Task.Run(() => JsonConvert.SerializeObject(respuesta));
             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(stringRespuesta);
@@ -206,15 +212,30 @@ namespace ServidorConexion
                 output.Write(buffer, 0, buffer.Length);
                 // Cierra output stream.
                 output.Close();
-                Console.WriteLine("\nENVIADO!");
+                escribirEnConsola("INFO", "Respuesta enviada al cliente");
             }
             catch (System.Net.HttpListenerException e)
             {
-                Console.WriteLine("\nCliente no disponible");
-            }
-            
-
+                escribirEnConsola("WARNING", "Cliente desconectado, imposible enviar respuesta");
+            }     
         }
+        public static void escribirEnConsola(string tipo, string texto)
+        {
+            string hora = DateTime.Now.ToString("[HH:mm:ss]");
+            string tipomsg = string.Format("[{0}] ", tipo);
+            Console.WriteLine(hora + tipomsg + texto);
+        }
+        public static void escribirEnConsola(string tipo, string texto , string args)
+        {
+            string hora = DateTime.Now.ToString("[HH:mm:ss]");
+            string tipomsg = string.Format("[{0}] ", tipo);
+            Console.WriteLine(hora+tipomsg+texto,args);
+        }
+
+
+
+
+
 
 
 

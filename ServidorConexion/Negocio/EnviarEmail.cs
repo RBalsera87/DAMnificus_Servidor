@@ -39,15 +39,15 @@ namespace ServidorConexion.Negocio
 
             try
             {
-                Console.WriteLine("Comienzo del envio del email a traves de SSL ...");
+                Program.escribirEnConsola("INFO", "Comienzo del envio del email a traves de SSL ...");
                 oSmtp.SendMail(oServer, oMail);
-                Console.WriteLine("El email con el token se ha enviado satisfactoriamente!");
+                Program.escribirEnConsola("INFO", "El email con el token se ha enviado satisfactoriamente!");
                 return true;
             }
             catch (Exception ep)
             {
-                Console.WriteLine("Problema al enviar el email con error:");
-                Console.WriteLine(ep.Message);
+                Program.escribirEnConsola("WARNING", "Problema al enviar el email con error:");
+                Program.escribirEnConsola("ERROR", ep.Message);
                 return false;
             }
         }
