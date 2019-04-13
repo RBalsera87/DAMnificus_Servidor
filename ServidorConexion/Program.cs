@@ -66,7 +66,10 @@ namespace ServidorConexion
                     {
                         peticionActual.token = CifradoJson.Descifrado(peticionActual.token, peticionActual.peticion);
                     }
-                    peticionActual.usuario = CifradoJson.Descifrado(peticionActual.usuario, peticionActual.peticion);
+                    if (peticionActual.usuario != null)
+                    {
+                        peticionActual.usuario = CifradoJson.Descifrado(peticionActual.usuario, peticionActual.peticion);
+                    }                        
 
                     // Para depurar: La mostramos descifrada
                     escribirEnConsola("DEBUG", "Usuario descifrado : " + peticionActual.usuario);
@@ -83,9 +86,9 @@ namespace ServidorConexion
                     
                     if (peticionActual.peticion.Equals("requestSalt"))
                     {
-                        escribirEnConsola("INFO", "Recibida peticion de sal por el usuario {0}", peticionActual.usuario);
+                        escribirEnConsola("INFO", "Recibida peticion de SALT por el usuario {0}", peticionActual.usuario);
                         //Consulta clave 
-                        claveEncriptada = conexUsuarios.consultaPeticion(peticionActual);
+                        claveEncriptada = conexUsuarios.obtenerPassHash(peticionActual);
                         if (!claveEncriptada.Equals("null"))
                         {
                             escribirEnConsola("INFO", "Respondiendo con SALT y esperando peticion login...");
@@ -93,7 +96,7 @@ namespace ServidorConexion
                         }
                         else
                         {
-                            escribirEnConsola("INFO", "No se ha encontrado el usuario en la BBDD");
+                            escribirEnConsola("INFO", "No se ha encontrado el usuario en la BD");
                             enviarRespuesta("noExisteUsuario", null, null, null, response);
                         }
 
@@ -102,7 +105,7 @@ namespace ServidorConexion
                     {
                         escribirEnConsola("INFO", "Recibida peticion de login por el usuario {0}", peticionActual.usuario);
                         //Consulta clave
-                        claveEncriptada = conexUsuarios.consultaPeticion(peticionActual);
+                        claveEncriptada = conexUsuarios.obtenerPassHash(peticionActual);
                         //Comprueba que la clave el la misma
                         bool claveValida = Clave.validarClave(peticionActual.clave, claveEncriptada);
                         if (claveValida)
@@ -128,6 +131,7 @@ namespace ServidorConexion
                     }
                     else if (peticionActual.peticion.Equals("borrarToken"))
                     {
+                        escribirEnConsola("INFO", "Recibida peticion de borrado de token");
                         if (conexUsuarios.actualizarTokenEnBBDD("", peticionActual.usuario))
                         {
                             enviarRespuesta("tokenBorrado", null, null, null, response);
@@ -155,9 +159,36 @@ namespace ServidorConexion
                         if (EnviarEmail.registro(email, token))
                         {
                             enviarRespuesta("emailConTokenEnviado", token, null, null, response);
-                            escribirEnConsola("INFO", "Email enviado!");
+                            escribirEnConsola("INFO", "¡Email enviado! Esperando confirmación.");
                         }
                     }
+                    else if (peticionActual.peticion.Equals("confirmarRegistro"))
+                    {
+                        escribirEnConsola("INFO", "Recibida petición de confirmación de registro");
+                        string usuario = peticionActual.usuario;
+                        string email = peticionActual.datos["email"];
+                        string pass = peticionActual.clave;
+                        string nombre = peticionActual.datos["nombre"];
+                        string apellidos = peticionActual.datos["apellidos"];
+                        //bool registrado = conexUsuarios.introducirUsuarioEnBBDD(usuario, email, pass, nombre, apellidos); 
+                        //AQUI TE HAS QUEDADO RUBEN!!!
+                    }
+                    else if (peticionActual.peticion.Equals("buscaEmailenBD") || peticionActual.peticion.Equals("buscaUsuarioenBD"))
+                    {
+                        escribirEnConsola("INFO", "Recibida petición ", peticionActual.peticion);
+                        bool duplicado = conexUsuarios.comprobarSiExisteEnBD(peticionActual);
+                        if (duplicado)
+                        {
+                            escribirEnConsola("INFO", "El elemento ya existe en la BD, enviando respuesta: duplicado");
+                            enviarRespuesta("duplicado", null, null, null, response);
+                        }else
+                        {
+                            escribirEnConsola("INFO", "El elemento no existe en la BD, enviando respuesta: noDuplicado");
+                            enviarRespuesta("noDuplicado", null, null, null, response);
+                        }
+                        
+                    }
+
                 }
             }
             catch (SocketException e)
