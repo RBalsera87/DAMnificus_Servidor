@@ -111,7 +111,7 @@ namespace ServidorConexion
             conectar();
             MySqlCommand cmd = new MySqlCommand();
             // La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas
-            string sql = "INSERT INTO usuarios VALUES( @user, @email, @pass, @name, @apell )";            
+            string sql = "INSERT INTO usuarios VALUES( null, @user, @email, @pass, @name, @apell )";            
             cmd.Parameters.AddWithValue("@user", usuario);
             cmd.Parameters.AddWithValue("@email", email);
             cmd.Parameters.AddWithValue("@pass", pass);
@@ -120,6 +120,26 @@ namespace ServidorConexion
             cmd.CommandText = sql;
             cmd.Connection = conexion;
             if (cmd.ExecuteNonQuery() == 1) // El usuario se ha guardado
+            {
+                conexion.Close();
+                return true;
+            }
+            else
+            {
+                conexion.Close();
+                return false;
+            }
+        }
+        public bool borrarUsuarioDeBBDD(string usuario)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            // La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas
+            string sql = "DELETE FROM usuarios WHERE usuario = @user";
+            cmd.Parameters.AddWithValue("@user", usuario);
+            cmd.CommandText = sql;
+            cmd.Connection = conexion;
+            if (cmd.ExecuteNonQuery() == 1) // El usuario se ha borrado
             {
                 conexion.Close();
                 return true;
