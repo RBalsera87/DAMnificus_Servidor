@@ -1,6 +1,7 @@
 ﻿using EntidadesCompartidas;
 using MySql.Data.MySqlClient;
 using ServidorConexion.Negocio;
+using System;
 using System.Collections.Generic;
 
 namespace ServidorConexion
@@ -109,26 +110,58 @@ namespace ServidorConexion
         public bool introducirUsuarioEnBBDD(string usuario, string email, string pass, string nombre, string apellidos)
         {
             conectar();
-            MySqlCommand cmd = new MySqlCommand();
-            // La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas
-            string sql = "INSERT INTO usuarios VALUES( null, @user, @email, @pass, @name, @apell )";            
-            cmd.Parameters.AddWithValue("@user", usuario);
-            cmd.Parameters.AddWithValue("@email", email);
-            cmd.Parameters.AddWithValue("@pass", pass);
-            cmd.Parameters.AddWithValue("@name", nombre);
-            cmd.Parameters.AddWithValue("@apell", apellidos);
-            cmd.CommandText = sql;
+            MySqlTransaction Transaccion;
+            Transaccion = conexion.BeginTransaction();
+            ConsolaDebug.escribirEnConsola("INFO", "Comenzando transacción en BD");
+            MySqlCommand cmd = new MySqlCommand();            
             cmd.Connection = conexion;
-            if (cmd.ExecuteNonQuery() == 1) // El usuario se ha guardado
+            cmd.Transaction = Transaccion;
+            try
             {
-                conexion.Close();
+                // Primer insert de la transacción
+                string sql = "INSERT INTO usuarios VALUES( null, @user, @email, @pass, @name, @apell )";
+                cmd.Parameters.AddWithValue("@user", usuario);
+                cmd.Parameters.AddWithValue("@email", email);
+                cmd.Parameters.AddWithValue("@pass", pass);
+                cmd.Parameters.AddWithValue("@name", nombre);
+                cmd.Parameters.AddWithValue("@apell", apellidos);
+                cmd.CommandText = sql;
+                cmd.ExecuteNonQuery();
+                ConsolaDebug.escribirEnConsola("INFO", "Insert en usuarios ejecutado satisfactoriamente");
+                // Segundo insert de la transacción
+                sql = "INSERT INTO credenciales VALUES( (SELECT Id FROM usuarios WHERE usuario = @user), null, 'normal' )";
+                cmd.CommandText = sql;
+                cmd.ExecuteNonQuery();
+                Transaccion.Commit();
+                ConsolaDebug.escribirEnConsola("INFO", "Insert en credenciales ejecutado satisfactoriamente");
                 return true;
             }
-            else
+            catch (Exception e)
             {
-                conexion.Close();
+                try
+                {
+                    ConsolaDebug.escribirEnConsola("WARNING", "Problema en transacción, comenzando ROLLBACK");
+                    Transaccion.Rollback();
+                    ConsolaDebug.escribirEnConsola("INFO", "ROLLBACK ejecutado satisfactoriamente");
+                }
+                catch (MySqlException ex)
+                {
+                    ConsolaDebug.escribirEnConsola("WARNING", "Problema en ROLLBACK");
+                    if (Transaccion.Connection != null)
+                    {
+                        ConsolaDebug.escribirEnConsola("ERROR","Excepción lanzada: {0}", ex.Message);
+                    }
+                }
+                ConsolaDebug.escribirEnConsola("WARNING", "No se ha insertado nada en la BD");
+                ConsolaDebug.escribirEnConsola("ERROR", "Excepción lanzada: {0}", e.Message);
                 return false;
             }
+            finally
+            {
+                conexion.Close();
+                
+            }
+
         }
         public bool borrarUsuarioDeBBDD(string usuario)
         {
@@ -149,6 +182,7 @@ namespace ServidorConexion
                 conexion.Close();
                 return false;
             }
+
         }
     }
 }

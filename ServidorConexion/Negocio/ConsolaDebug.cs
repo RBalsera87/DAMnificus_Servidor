@@ -30,13 +30,15 @@ namespace ServidorConexion.Negocio
         {
             Console.SetWindowSize(120, 35);
             Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine(" _____   _______  _______         __   ___  __                       _______                                  \n" +
+            Console.WriteLine(" _____   _______  _______         __   ___  __                       _______\n" +
                               "|     \\ |   _   ||   |   |.-----.|__|.'  _||__|.----..--.--..-----. |     __|.-----..----..--.--..-----..----.\n" +
-                              "|  --  ||       ||       ||     ||  ||   _||  ||  __||  |  ||__ --| |__     ||  -__||   _||  |  ||  -__||   _|\n" +
-                              "|_____/ |___|___||__|_|__||__|__||__||__|  |__||____||_____||_____| |_______||_____||__|   \\___/ |_____||__| \n");
+                              "|  --  ||       ||       ||     ||  ||   _||  ||  __||  |  ||__ --| |__     ||  -__||   _||  |  ||  -__||   _|");
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
+            Console.WriteLine("|_____/ |___|___||__|_|__||__|__||__||__|  |__||____||_____||_____| |_______||_____||__|   \\___/ |_____||__| \n");
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
 
             Console.WriteLine("░░░░░░░░░░░░░░░░░░░▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓██████████▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒░░░░░░░░░░░░░░░░░░░");
-            Console.ForegroundColor = ConsoleColor.DarkCyan;
+            Console.ForegroundColor = ConsoleColor.DarkGreen;
             Console.WriteLine("Version 0.8 - Abril 2019");
             Console.ForegroundColor = ConsoleColor.Gray;
         }
