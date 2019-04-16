@@ -38,7 +38,7 @@ namespace ServidorConexion
             conectar();
             MySqlCommand cmd = new MySqlCommand();
             //La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas
-            cmd.CommandText = "Select pass_hash from usuarios where BINARY usuario = @user";
+            cmd.CommandText = "Select pass from usuarios where BINARY usuario = @user";
             cmd.Parameters.AddWithValue("@user", peticion.usuario);
             //cmd.Parameters.AddWithValue("@pass", pass);
             cmd.Connection = conexion;
@@ -61,7 +61,7 @@ namespace ServidorConexion
             conectar();
             MySqlCommand cmd = new MySqlCommand();
             // La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas
-            string sql = "UPDATE credenciales SET Token = @token WHERE Id = (SELECT Id FROM usuarios WHERE BINARY Nombre = @user)";
+            string sql = "UPDATE credenciales SET Token = @token WHERE Id = (SELECT Id FROM usuarios WHERE BINARY Usuario = @user)";
             cmd.Parameters.AddWithValue("@token", token);
             cmd.Parameters.AddWithValue("@user", usuario);
             cmd.CommandText = sql;
@@ -78,7 +78,6 @@ namespace ServidorConexion
         }
         public bool comprobarSiExisteEnBD(Peticion peticionActual)
         {
-
             conectar();
             MySqlCommand cmd = new MySqlCommand();            
             if (peticionActual.peticion.Equals("buscaEmailenBD"))
@@ -129,7 +128,7 @@ namespace ServidorConexion
                 cmd.ExecuteNonQuery();
                 ConsolaDebug.escribirEnConsola("INFO", "Insert en usuarios ejecutado satisfactoriamente");
                 // Segundo insert de la transacción
-                sql = "INSERT INTO credenciales VALUES( (SELECT Id FROM usuarios WHERE usuario = @user), null, 'normal' )";
+                sql = "INSERT INTO credenciales VALUES( (SELECT Id FROM usuarios WHERE usuario = @user), 'token', 'normal' )";
                 cmd.CommandText = sql;
                 cmd.ExecuteNonQuery();
                 Transaccion.Commit();
@@ -158,8 +157,7 @@ namespace ServidorConexion
             }
             finally
             {
-                conexion.Close();
-                
+                conexion.Close();                
             }
 
         }

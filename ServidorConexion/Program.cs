@@ -13,14 +13,14 @@ namespace ServidorConexion
 {
     class Program
     {
-
         static void Main(string[] args)
         {
+            Console.Title = "DAMnificus Server";
             ConsolaDebug.cargarConsola();
             HttpListener httpListener = null;
             try
             {
-                ConsolaDebug.escribirEnConsola("INFO", "Iniciando instancia de HttpListener");
+                ConsolaDebug.escribirEnConsola("INFO", "Servidor iniciado");
                 httpListener = new HttpListener
                 {
                     Prefixes = { "http://localhost:8080/" },
@@ -53,13 +53,15 @@ namespace ServidorConexion
                     //escribirEnConsola("DEBUG", "End of client data:");
                     ConsolaDebug.escribirEnConsola("DEBUG", "Parseando la petición Json...");
                     var objetoJSON = JObject.Parse(datosJson);
-                    ConsolaDebug.escribirEnConsola("DEBUG", "Peticion : " + (string)objetoJSON["peticion"]);
-                    //escribirEnConsola("DEBUG", "Usuario : " + (string)objetoJSON["usuario"]);
-                    //escribirEnConsola("DEBUG", "Contraseña : " + (string)objetoJSON["clave"]);
-                    //escribirEnConsola("DEBUG", "Token : " + (string)objetoJSON["token"]);                   
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Peticion: {0}", (string)objetoJSON["peticion"]);
+                    //escribirEnConsola("DEBUG", "Usuario: {0}", (string)objetoJSON["usuario"]);
+                    //escribirEnConsola("DEBUG", "Contraseña: {0}", (string)objetoJSON["clave"]);
+                    //escribirEnConsola("DEBUG", "Token: {0}", (string)objetoJSON["token"]);                   
 
-                    Peticion peticionActual = objetoJSON.ToObject<Peticion>(); // Serializa el objeto JSON en un objeto .NET                                                                               
-                    Task.Run(() => procesarPeticion(peticionActual, response)); // Procesa cada petición de forma asincrona en un threadpool
+                    // Serializa el objeto JSON en un objeto .NET
+                    Peticion peticionActual = objetoJSON.ToObject<Peticion>();
+                    // Procesa cada petición de forma asincrona en un threadpool                                                                        
+                    Task.Run(() => procesarPeticion(peticionActual, response)); 
                     
                 }
             }
@@ -75,7 +77,7 @@ namespace ServidorConexion
             }
             finally
             {
-                ConsolaDebug.escribirEnConsola("INFO", "Pulsa una intro para cerrar la ventana");
+                ConsolaDebug.escribirEnConsola("INFO", "Pulsa tecla intro para cerrar la ventana");
                 Console.Read();
                 // Stop listening for new clients.
                 httpListener.Close();
@@ -83,8 +85,9 @@ namespace ServidorConexion
         }
         public static void procesarPeticion(Peticion peticionActual, HttpListenerResponse response)
         {
+            string nombreHilo = "";
             try
-            {
+            {                
                 if (peticionActual.clave != null)
                 {
                     peticionActual.clave = CifradoJson.Descifrado(peticionActual.clave, peticionActual.peticion);
@@ -97,9 +100,11 @@ namespace ServidorConexion
                 {
                     peticionActual.usuario = CifradoJson.Descifrado(peticionActual.usuario, peticionActual.peticion);
                 }
+                nombreHilo = peticionActual.peticion + "-" + peticionActual.usuario;
+                Thread.CurrentThread.Name = nombreHilo;
+                ConsolaDebug.escribirEnConsola("DEBUG", "Hilo creado con nombre: {0}", nombreHilo);
 
-                // Para depurar: La mostramos descifrada
-                ConsolaDebug.escribirEnConsola("DEBUG", "Usuario descifrado : " + peticionActual.usuario);
+                //ConsolaDebug.escribirEnConsola("DEBUG", "Usuario descifrado: {0}", peticionActual.usuario);
                 //escribirEnConsola("DEBUG", "Contraseña descifrada: " + peticionActual.clave);
                 //escribirEnConsola("DEBUG", "Token descifrado: " + peticionActual.token);
 
@@ -275,6 +280,10 @@ namespace ServidorConexion
                 ConsolaDebug.escribirEnConsola("WARNING", "Cerrando hilo de petición...");
                 Thread.CurrentThread.Abort();
             }
+            finally
+            {
+                ConsolaDebug.escribirEnConsola("DEBUG", "Hilo {0} finalizado", nombreHilo);
+            }
             
 
         }
@@ -319,7 +328,7 @@ namespace ServidorConexion
                 output.Close();
                 ConsolaDebug.escribirEnConsola("INFO", "Respuesta enviada al cliente");
             }
-            catch (System.Net.HttpListenerException e)
+            catch (System.Net.HttpListenerException)
             {
                 ConsolaDebug.escribirEnConsola("WARNING", "Cliente desconectado, imposible enviar respuesta");
             }

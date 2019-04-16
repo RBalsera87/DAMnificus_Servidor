@@ -4,13 +4,14 @@ namespace ServidorConexion.Negocio
 {
     class ConsolaDebug
     {
+        private static bool debugActivado = true; // Activa o desactiva los mensajes de depuración en la consola
         public static void escribirEnConsola(string tipo, string texto)
         {
             string hora = DateTime.Now.ToString("[HH:mm:ss]");
             string tipomsg = string.Format("[{0}] ", tipo);
             if (tipo.Equals("INFO")) { Console.ForegroundColor = ConsoleColor.Gray; }
-            else if (tipo.Equals("INFO+")) { Console.ForegroundColor = ConsoleColor.DarkGreen; }
-            else if (tipo.Equals("DEBUG")) { Console.ForegroundColor = ConsoleColor.DarkYellow; }
+            else if (tipo.Equals("INFO+")) { Console.ForegroundColor = ConsoleColor.White; }
+            else if (tipo.Equals("DEBUG")) { if (!debugActivado) { return; } Console.ForegroundColor = ConsoleColor.DarkYellow; }
             else if (tipo.Equals("WARNING")) { Console.ForegroundColor = ConsoleColor.Yellow; }
             else if (tipo.Equals("ERROR")) { Console.ForegroundColor = ConsoleColor.Red; }
             Console.WriteLine(hora + tipomsg + texto);
@@ -20,10 +21,14 @@ namespace ServidorConexion.Negocio
             string hora = DateTime.Now.ToString("[HH:mm:ss]");
             string tipomsg = string.Format("[{0}] ", tipo);
             if (tipo.Equals("INFO")) { Console.ForegroundColor = ConsoleColor.Gray; }
-            else if (tipo.Equals("INFO+")) { Console.ForegroundColor = ConsoleColor.DarkGreen; }
-            else if (tipo.Equals("DEBUG")) { Console.ForegroundColor = ConsoleColor.DarkYellow; }
+            else if (tipo.Equals("INFO+")) { Console.ForegroundColor = ConsoleColor.White; }
+            else if (tipo.Equals("DEBUG")) { if (!debugActivado) { return; } Console.ForegroundColor = ConsoleColor.DarkYellow; }
             else if (tipo.Equals("WARNING")) { Console.ForegroundColor = ConsoleColor.Yellow; }
             else if (tipo.Equals("ERROR")) { Console.ForegroundColor = ConsoleColor.Red; }
+            if (tipo.Equals("DEBUG") && !debugActivado)
+            {
+                return;
+            }
             Console.WriteLine(hora + tipomsg + texto, args);
         }
         public static void cargarConsola()
