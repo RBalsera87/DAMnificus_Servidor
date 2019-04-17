@@ -194,7 +194,7 @@ namespace ServidorConexion
                 {
                     ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de enlaces del usuario {0}", peticionActual.usuario);
                     List<Enlaces> coleccion = conexEnlaces.obtenerColeccionEnlaces();
-                    enviarRespuesta("coleccionEnviada", null, null, coleccion, response);
+                    enviarRespuesta("coleccionEnviada", null, null, (Object)coleccion, response);
                     ConsolaDebug.escribirEnConsola("INFO", "Colección enviada al cliente satisfactoriamente");
                 }
 
@@ -288,7 +288,7 @@ namespace ServidorConexion
 
         }
     
-        public static async void enviarRespuesta(string resp, string token, string sal, List<Enlaces> colec, HttpListenerResponse response)
+        public static async void enviarRespuesta(string resp, string token, string sal, Object colec, HttpListenerResponse response)
         {
             string salCifrada = null;
             string tokenCifrado = null;
