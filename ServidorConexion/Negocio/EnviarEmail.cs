@@ -7,27 +7,42 @@ namespace ServidorConexion.Negocio
     class EnviarEmail
     {
         public static bool registro(string email, string token)
+        {                      
+            const string asunto = "Bienvenido a DAMnificus";
+            string cuerpo = header + bodyRegistro + token + bodyFinal;
+            return enviarEmail(email, asunto, cuerpo);
+        }
+        public static bool reporte(string usuario, string email, string titulo, string reporte)
+        {
+            string asunto = "Reporte de " + usuario + ": " + titulo;
+            string cuerpo = header + bodyReporte + reporte + bodyFinal;
+            return enviarEmail(email, asunto, cuerpo);
+        }
+        public static bool passPerdida(string email, string token)
+        {
+            const string asunto = "Restaurar contraseña de DAMnificus";
+            string cuerpo = header + bodyPassPerdida + token + bodyFinal;
+            return enviarEmail(email, asunto, cuerpo);
+        }
+        private static bool enviarEmail(string email, string asunto, string cuerpo)
         {
             var fromAddress = new MailAddress("doomknight871@gmail.com", "DAMnificus Contacto");
-            var toAddress = new MailAddress(email);
             const string fromPassword = "prodam$19";
-            const string subject = "Bienvenido a DAMnificus";
-            string body = body1 + token + body2;
-
+            var toAddress = new MailAddress(email);
             var smtp = new SmtpClient
             {
                 UseDefaultCredentials = false,
                 Host = "smtp.gmail.com",
-                Port = 587,                
+                Port = 587,
                 DeliveryMethod = SmtpDeliveryMethod.Network,
                 Credentials = new NetworkCredential(fromAddress.Address, fromPassword),
-                EnableSsl = true,                
+                EnableSsl = true,
                 Timeout = 20000
             };
             using (var message = new MailMessage(fromAddress, toAddress)
             {
-                Subject = subject,
-                Body = body,
+                Subject = asunto,
+                Body = cuerpo,
                 IsBodyHtml = true
             })
             {
@@ -44,11 +59,11 @@ namespace ServidorConexion.Negocio
                     ConsolaDebug.escribirEnConsola("ERROR", e.Message);
                     return false;
                 }
-                
+
             }
         }
-        
-        private static string body1 = "<!doctype html>" +
+
+        private static string header = "<!doctype html>" +
         "<html>" +
         "  <head>" +
         "    <meta name=\"viewport\" content=\"width=device-width\" />" +
@@ -342,8 +357,8 @@ namespace ServidorConexion.Negocio
         "        } " +
         "      }" +
         "    </style>" +
-        "  </head>" +
-        "  <body class=\"\">" +
+        "  </head>";
+        private static string bodyRegistro = "  <body class=\"\">" +
         "    <span class=\"preheader\">Aqui esta tu token para completar tu registro en DAMnificus.</span>" +
         "    <table role=\"presentation\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" class=\"body\">" +
         "      <tr>" +
@@ -362,7 +377,46 @@ namespace ServidorConexion.Negocio
         "                        <p>Siempre es de agrado recibir un nuevo miembro en nuestra comunidad. Esperamos que disfrutes de nuestro servicio." +
                                     "A continuación te damos el token que debes copiar en la aplicación para finalizar el registro:</p>" +
         "                        <p><b>";
-                private static string body2 = "</b></p>" +
+        
+        private static string bodyReporte = "  <body class=\"\">" +
+        "    <span class=\"preheader\">Reporte de usuario para la App DAMnificus</span>" +
+        "    <table role=\"presentation\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" class=\"body\">" +
+        "      <tr>" +
+        "        <td>&nbsp;</td>" +
+        "        <td class=\"container\">" +
+        "          <div class=\"content\">" +
+        "            <!-- START CENTERED WHITE CONTAINER -->" +
+        "            <table role=\"presentation\" class=\"main\">" +
+        "              <!-- START MAIN CONTENT AREA -->" +
+        "              <tr>" +
+        "                <td class=\"wrapper\">" +
+        "                  <table role=\"presentation\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\">" +
+        "                    <tr>" +
+        "                      <td>" +
+        "                        <p>Reporte recibido,</p>" +
+        "                        <p>Hemos recibido un reporte de un usuario sobre la aplicación, a continuación se expone el mensaje:</p>" +
+        "                        <p><b>";
+        
+        private static string bodyPassPerdida = "  <body class=\"\">" +
+        "    <span class=\"preheader\">Aqui esta tu token para completar cambiar tu contraseña en DAMnificus.</span>" +
+        "    <table role=\"presentation\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" class=\"body\">" +
+        "      <tr>" +
+        "        <td>&nbsp;</td>" +
+        "        <td class=\"container\">" +
+        "          <div class=\"content\">" +
+        "            <!-- START CENTERED WHITE CONTAINER -->" +
+        "            <table role=\"presentation\" class=\"main\">" +
+        "              <!-- START MAIN CONTENT AREA -->" +
+        "              <tr>" +
+        "                <td class=\"wrapper\">" +
+        "                  <table role=\"presentation\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\">" +
+        "                    <tr>" +
+        "                      <td>" +
+        "                        <p>Bienvenido a DAMnificus,</p>" +
+        "                        <p>Si no has solicitado cambiar la contraseña de la app DAMnificus ignora este mensaje y bórralo." +
+                                    "Si por el contrario sí que has solicitado cambiar la contraseña de tu cuenta aquí tienes el token que necesitas:</p>" +
+        "                        <p><b>";
+        private static string bodyFinal = "</b></p>" +
         "                        <p>Un saludo.</p>" +
         "                      </td>" +
         "                    </tr>" +
@@ -396,6 +450,5 @@ namespace ServidorConexion.Negocio
         "    </table>" +
         "  </body>" +
         "</html>";
-
     }
 }

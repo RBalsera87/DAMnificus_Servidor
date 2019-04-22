@@ -186,8 +186,16 @@ namespace ServidorConexion
         {
             conectar();
             MySqlCommand cmd = new MySqlCommand();
+            string sql = "";
             // La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas
-            string sql = "UPDATE usuarios SET pass = @pass WHERE Usuario = @user";
+            if (usuario.Contains("@"))
+            {
+                sql = "UPDATE usuarios SET pass = @pass WHERE email = @user";
+            }                
+            else
+            {
+                sql = "UPDATE usuarios SET pass = @pass WHERE usuario = @user";
+            }               
             cmd.Parameters.AddWithValue("@pass", pass);
             cmd.Parameters.AddWithValue("@user", usuario);
             cmd.CommandText = sql;
