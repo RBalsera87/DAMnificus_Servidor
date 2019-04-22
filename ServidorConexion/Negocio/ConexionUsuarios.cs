@@ -27,7 +27,7 @@ namespace ServidorConexion
                 //}
                     
             }
-            catch (MySqlException e)
+            catch (MySqlException)
             {
                 throw;
             }
@@ -182,5 +182,48 @@ namespace ServidorConexion
             }
 
         }
+        public bool actualizarPassEnBBDD(string pass, string usuario)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            // La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas
+            string sql = "UPDATE usuarios SET pass = @pass WHERE Usuario = @user";
+            cmd.Parameters.AddWithValue("@pass", pass);
+            cmd.Parameters.AddWithValue("@user", usuario);
+            cmd.CommandText = sql;
+            cmd.Connection = conexion;
+            if (cmd.ExecuteNonQuery() == 1) // La pass se ha cambiado
+            {
+                conexion.Close();
+                return true;
+            }
+            else
+            {
+                conexion.Close();
+                return false;
+            }
+        }
+        public string obtenerToken(string usuario)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.CommandText = "Select Token from credenciales where Id = (SELECT Id FROM usuarios WHERE usuario = @user)";
+            cmd.Parameters.AddWithValue("@user", usuario);
+            cmd.Connection = conexion;
+            MySqlDataReader login = cmd.ExecuteReader();
+            if (login.Read())
+            {
+                string token = login.GetString(0);
+                conexion.Close();
+                return token;
+            }
+            else
+            {
+                conexion.Close();
+                return "null";
+            }
+        }
+
+        
     }
 }

@@ -54,9 +54,9 @@ namespace ServidorConexion
                     ConsolaDebug.escribirEnConsola("DEBUG", "Parseando la petición Json...");
                     var objetoJSON = JObject.Parse(datosJson);
                     ConsolaDebug.escribirEnConsola("DEBUG", "Peticion: {0}", (string)objetoJSON["peticion"]);
-                    //escribirEnConsola("DEBUG", "Usuario: {0}", (string)objetoJSON["usuario"]);
-                    //escribirEnConsola("DEBUG", "Contraseña: {0}", (string)objetoJSON["clave"]);
-                    //escribirEnConsola("DEBUG", "Token: {0}", (string)objetoJSON["token"]);                   
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Usuario: {0}", (string)objetoJSON["usuario"]);
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Contraseña: {0}", (string)objetoJSON["clave"]);
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Token: {0}", (string)objetoJSON["token"]);                   
 
                     // Serializa el objeto JSON en un objeto .NET
                     Peticion peticionActual = objetoJSON.ToObject<Peticion>();
@@ -192,9 +192,9 @@ namespace ServidorConexion
                 // Petición para obtener los enlaces
                 else if (peticionActual.peticion.Equals("obtenerColeccionEnlaces"))
                 {
-                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de enlaces del usuario {0}", peticionActual.usuario);
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de enlaces por el usuario {0}", peticionActual.usuario);
                     List<Enlaces> coleccion = conexEnlaces.obtenerColeccionEnlaces();
-                    enviarRespuesta("coleccionEnviada", null, null, (Object)coleccion, response);
+                    enviarRespuesta("coleccionEnviada", null, null, JArray.FromObject(coleccion), response);
                     ConsolaDebug.escribirEnConsola("INFO", "Colección enviada al cliente satisfactoriamente");
                 }
 
@@ -272,6 +272,63 @@ namespace ServidorConexion
                     }
 
                 }
+                // Petición de cambiar clave
+                else if (peticionActual.peticion.Equals("cambiarPass"))
+                {
+                    // Comprobamos el token de sesión
+                    if (comprobarTokenValido(peticionActual, conexUsuarios, response))
+                    {
+                        ConsolaDebug.escribirEnConsola("INFO+", "Recibida petición de cambiar contraseña por el usuario {0}", peticionActual.usuario);
+                        // Consulta clave
+                        claveEncriptada = conexUsuarios.obtenerPassHash(peticionActual);
+                        // Comprueba que la clave es la misma
+                        bool claveValida = Clave.validarClave(peticionActual.clave, claveEncriptada);
+                        if (claveValida)
+                        {
+                            ConsolaDebug.escribirEnConsola("INFO", "La contraseña es válida, cambiando por nueva...");
+                            // Se usa espacio del token para la pass nueva
+                            if (conexUsuarios.actualizarPassEnBBDD(peticionActual.token, peticionActual.usuario))
+                            {
+                                ConsolaDebug.escribirEnConsola("INFO", "Nueva contraseña guardada en BD existósamente");
+                                enviarRespuesta("passCambiada", null, null, null, response);
+                            }
+                            else
+                            {
+                                ConsolaDebug.escribirEnConsola("WARNING", "¡ATENCIóN! Error al guardar la nueva contraseña en BD");
+                                enviarRespuesta("passNoCambiada", null, null, null, response);
+                            }
+
+                        }
+                        else
+                        {
+                            ConsolaDebug.escribirEnConsola("INFO", "Contraseña no válida");
+                            enviarRespuesta("passNoValida", null, null, null, response);
+                        }
+                    }                        
+
+                }
+                // Petición para obtener el curso del usuario
+                else if (peticionActual.peticion.Equals("obtenerCurso"))
+                {
+                    // Comprobamos el token de sesión
+                    if (comprobarTokenValido(peticionActual, conexUsuarios, response))
+                    {
+                        ConsolaDebug.escribirEnConsola("INFO+", "Recibida petición de obtener curso por el usuario {0}", peticionActual.usuario);
+                        string curso = conexEnlaces.obtenerCurso(peticionActual.usuario);
+                        if (curso != null)
+                        {
+                            ConsolaDebug.escribirEnConsola("DEBUG", "Respuesta: {0}", "curso" + curso);
+                            enviarRespuesta("curso" + curso, null, null, null, response);
+                            ConsolaDebug.escribirEnConsola("INFO", "Respondiendo al usuario con curso: {0}", curso);
+                        }
+                        else
+                        {
+                            enviarRespuesta("error", null, null, null, response);
+                            ConsolaDebug.escribirEnConsola("WARNING", "¡ATENCIóN! Error al obtener el curso del usuario en la BD");
+                        }
+                    }
+  
+                }
             }
             catch (Exception e)
             {
@@ -288,7 +345,7 @@ namespace ServidorConexion
 
         }
     
-        public static async void enviarRespuesta(string resp, string token, string sal, Object colec, HttpListenerResponse response)
+        public static async void enviarRespuesta(string resp, string token, string sal, JArray colec, HttpListenerResponse response)
         {
             string salCifrada = null;
             string tokenCifrado = null;
@@ -322,7 +379,7 @@ namespace ServidorConexion
             try
             {
                 System.IO.Stream output = response.OutputStream;
-                //Envia respuesta(Clave) al cliente
+                // Envia respuesta al cliente
                 output.Write(buffer, 0, buffer.Length);
                 // Cierra output stream.
                 output.Close();
@@ -333,7 +390,22 @@ namespace ServidorConexion
                 ConsolaDebug.escribirEnConsola("WARNING", "Cliente desconectado, imposible enviar respuesta");
             }
         }
-        
+        public static bool comprobarTokenValido(Peticion peticionActual, ConexionUsuarios conexUsuarios, HttpListenerResponse response)
+        {
+
+            string tokenBD = conexUsuarios.obtenerToken(peticionActual.usuario);
+            if (tokenBD.Equals(peticionActual.token))
+            {
+                ConsolaDebug.escribirEnConsola("INFO", "Token del cliente {0} válido", peticionActual.usuario);
+                return true;
+            }else
+            {
+                ConsolaDebug.escribirEnConsola("WARNING", "¡ATENCIóN! Token del usuario no válido, petición {0} rechazada", peticionActual.peticion);
+                enviarRespuesta("passNoValida", null, null, null, response);
+                return false;
+            }
+            
+        }
 
     }
 }

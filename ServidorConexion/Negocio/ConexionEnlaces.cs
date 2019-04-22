@@ -21,7 +21,7 @@ namespace ServidorConexion.Negocio
                 conexion = new MySqlConnection(cadenaConexion);
                 conexion.Open();
             }
-            catch (MySqlException e)
+            catch (MySqlException)
             {
                 throw;
             }
@@ -82,6 +82,26 @@ namespace ServidorConexion.Negocio
             {
                 conexion.Close();
                 return false;
+            }
+        }
+        public string obtenerCurso(string usuario)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.CommandText = "Select Curso from usuarios where BINARY Nombre = @user";
+            cmd.Parameters.AddWithValue("@user", usuario);
+            cmd.Connection = conexion;
+            MySqlDataReader login = cmd.ExecuteReader();
+            if (login.Read())
+            {
+                string curso = login.GetString(0);
+                conexion.Close();
+                return curso;
+            }
+            else
+            {
+                conexion.Close();
+                return "null";
             }
         }
 
