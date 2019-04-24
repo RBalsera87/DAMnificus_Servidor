@@ -104,6 +104,27 @@ namespace ServidorConexion.Negocio
                 return "null";
             }
         }
+        public bool cambiarCurso(string usuario, int curso)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            // La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas
+            string sql = "UPDATE usuarios SET Curso = (SELECT Id FROM curso WHERE Id = @curso) WHERE Nombre = @user";
+            cmd.Parameters.AddWithValue("@curso", curso);
+            cmd.Parameters.AddWithValue("@user", usuario);            
+            cmd.CommandText = sql;
+            cmd.Connection = conexion;
+            if (cmd.ExecuteNonQuery() == 1) // El curso se ha cambiado
+            {
+                conexion.Close();
+                return true;
+            }
+            else
+            {
+                conexion.Close();
+                return false;
+            }
+        }
 
         public string sumarYRestarValoracion(int id, string operacion)
         {

@@ -47,16 +47,16 @@ namespace ServidorConexion
                     {
                         ConsolaDebug.escribirEnConsola("WARNING", "Recibida peticion vacía");
                     }
-                    //escribirEnConsola("DEBUG", "Start of client JSON data:");                   
+                    //ConsolaDebug.escribirEnConsola("DEBUG", "Start of client JSON data:");                   
                     string datosJson = reader.ReadToEnd(); // Convierte los datos en una cadena.
-                    //escribirEnConsola("DEBUG",datosJson);
-                    //escribirEnConsola("DEBUG", "End of client data:");
-                    ConsolaDebug.escribirEnConsola("DEBUG", "Parseando la petición Json...");
+                    //ConsolaDebug.escribirEnConsola("DEBUG",datosJson);
+                    //ConsolaDebug.escribirEnConsola("DEBUG", "End of client data:");
+                    //ConsolaDebug.escribirEnConsola("DEBUG", "Parseando la petición Json...");
                     var objetoJSON = JObject.Parse(datosJson);
-                    ConsolaDebug.escribirEnConsola("DEBUG", "Peticion: {0}", (string)objetoJSON["peticion"]);
-                    ConsolaDebug.escribirEnConsola("DEBUG", "Usuario: {0}", (string)objetoJSON["usuario"]);
-                    ConsolaDebug.escribirEnConsola("DEBUG", "Contraseña: {0}", (string)objetoJSON["clave"]);
-                    ConsolaDebug.escribirEnConsola("DEBUG", "Token: {0}", (string)objetoJSON["token"]);                   
+                    //ConsolaDebug.escribirEnConsola("DEBUG", "Peticion: {0}", (string)objetoJSON["peticion"]);
+                    //ConsolaDebug.escribirEnConsola("DEBUG", "Usuario: {0}", (string)objetoJSON["usuario"]);
+                    //ConsolaDebug.escribirEnConsola("DEBUG", "Contraseña: {0}", (string)objetoJSON["clave"]);
+                    //ConsolaDebug.escribirEnConsola("DEBUG", "Token: {0}", (string)objetoJSON["token"]);                   
 
                     // Serializa el objeto JSON en un objeto .NET
                     Peticion peticionActual = objetoJSON.ToObject<Peticion>();
@@ -87,7 +87,7 @@ namespace ServidorConexion
         {
             string nombreHilo = "";
             try
-            {                
+            {
                 if (peticionActual.clave != null)
                 {
                     peticionActual.clave = CifradoJson.Descifrado(peticionActual.clave, peticionActual.peticion);
@@ -105,8 +105,8 @@ namespace ServidorConexion
                 ConsolaDebug.escribirEnConsola("DEBUG", "Hilo creado con nombre: {0}", nombreHilo);
 
                 //ConsolaDebug.escribirEnConsola("DEBUG", "Usuario descifrado: {0}", peticionActual.usuario);
-                //escribirEnConsola("DEBUG", "Contraseña descifrada: " + peticionActual.clave);
-                //escribirEnConsola("DEBUG", "Token descifrado: " + peticionActual.token);
+                //ConsolaDebug.escribirEnConsola("DEBUG", "Contraseña descifrada: " + peticionActual.clave);
+                //ConsolaDebug.escribirEnConsola("DEBUG", "Token descifrado: " + peticionActual.token);
 
                 ConexionUsuarios conexUsuarios = new ConexionUsuarios();
                 ConexionEnlaces conexEnlaces = new ConexionEnlaces();
@@ -228,7 +228,7 @@ namespace ServidorConexion
                     
                 }
 
-                // Petición de envio de token a email
+                // Petición de envio de token a email por registro
                 else if (peticionActual.peticion.Equals("emailRegistro"))
                 {
                     ConsolaDebug.escribirEnConsola("INFO+", "Recibida petición de token de registro por {0}", peticionActual.usuario);
@@ -240,6 +240,10 @@ namespace ServidorConexion
                     {
                         enviarRespuesta("emailConTokenEnviado", token, null, null, response);
                         ConsolaDebug.escribirEnConsola("INFO", "¡Email enviado! Esperando confirmación.");
+                    }
+                    else
+                    {
+                        enviarRespuesta("error", null, null, null, response);
                     }
                 }
 
@@ -302,41 +306,40 @@ namespace ServidorConexion
                     }
 
                 }
+
                 // Petición de cambiar clave
                 else if (peticionActual.peticion.Equals("cambiarPass"))
                 {
-                    // Comprobamos el token de sesión
-                    if (comprobarTokenValido(peticionActual, conexUsuarios, response))
+                    
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida petición de cambiar contraseña por el usuario {0}", peticionActual.usuario);
+                    // Consulta clave
+                    claveEncriptada = conexUsuarios.obtenerPassHash(peticionActual);
+                    // Comprueba que la clave es la misma
+                    bool claveValida = Clave.validarClave(peticionActual.clave, claveEncriptada);
+                    if (claveValida)
                     {
-                        ConsolaDebug.escribirEnConsola("INFO+", "Recibida petición de cambiar contraseña por el usuario {0}", peticionActual.usuario);
-                        // Consulta clave
-                        claveEncriptada = conexUsuarios.obtenerPassHash(peticionActual);
-                        // Comprueba que la clave es la misma
-                        bool claveValida = Clave.validarClave(peticionActual.clave, claveEncriptada);
-                        if (claveValida)
+                        ConsolaDebug.escribirEnConsola("INFO", "La contraseña es válida, cambiando por nueva...");
+                        // Se usa espacio del token para la pass nueva
+                        if (conexUsuarios.actualizarPassEnBBDD(peticionActual.token, peticionActual.usuario))
                         {
-                            ConsolaDebug.escribirEnConsola("INFO", "La contraseña es válida, cambiando por nueva...");
-                            // Se usa espacio del token para la pass nueva
-                            if (conexUsuarios.actualizarPassEnBBDD(peticionActual.token, peticionActual.usuario))
-                            {
-                                ConsolaDebug.escribirEnConsola("INFO", "Nueva contraseña guardada en BD existósamente");
-                                enviarRespuesta("passCambiada", null, null, null, response);
-                            }
-                            else
-                            {
-                                ConsolaDebug.escribirEnConsola("WARNING", "¡ATENCIóN! Error al guardar la nueva contraseña en BD");
-                                enviarRespuesta("passNoCambiada", null, null, null, response);
-                            }
-
+                            ConsolaDebug.escribirEnConsola("INFO", "Nueva contraseña guardada en BD existósamente");
+                            enviarRespuesta("passCambiada", null, null, null, response);
                         }
                         else
                         {
-                            ConsolaDebug.escribirEnConsola("INFO", "Contraseña no válida");
-                            enviarRespuesta("passNoValida", null, null, null, response);
+                            ConsolaDebug.escribirEnConsola("WARNING", "¡ATENCIóN! Error al guardar la nueva contraseña en BD");
+                            enviarRespuesta("passNoCambiada", null, null, null, response);
                         }
-                    }                        
+
+                    }
+                    else
+                    {
+                        ConsolaDebug.escribirEnConsola("INFO", "Contraseña no válida");
+                        enviarRespuesta("passNoValida", null, null, null, response);
+                    }
 
                 }
+
                 // Petición para obtener el curso del usuario
                 else if (peticionActual.peticion.Equals("obtenerCurso"))
                 {
@@ -347,7 +350,7 @@ namespace ServidorConexion
                         string curso = conexEnlaces.obtenerCurso(peticionActual.usuario);
                         if (curso != null)
                         {
-                            ConsolaDebug.escribirEnConsola("DEBUG", "Respuesta: {0}", "curso" + curso);
+                            //ConsolaDebug.escribirEnConsola("DEBUG", "Respuesta: {0}", "curso" + curso);
                             enviarRespuesta("curso" + curso, null, null, null, response);
                             ConsolaDebug.escribirEnConsola("INFO", "Respondiendo al usuario con curso: {0}", curso);
                         }
@@ -357,7 +360,88 @@ namespace ServidorConexion
                             ConsolaDebug.escribirEnConsola("WARNING", "¡ATENCIóN! Error al obtener el curso del usuario en la BD");
                         }
                     }
-  
+
+                }
+
+                // Petición para cambiar el curso actual del usuario
+                else if (peticionActual.peticion.Equals("cambiarCurso"))
+                {
+                    // Comprobamos el token de sesión
+                    if (comprobarTokenValido(peticionActual, conexUsuarios, response))
+                    {
+                        ConsolaDebug.escribirEnConsola("INFO+", "Recibida petición de cambiar curso actual por el usuario {0}", peticionActual.usuario);
+                        string curso = peticionActual.datos["curso"];
+                        int numcurso = int.Parse(curso.Substring(curso.Length - 1, 1));
+                        if (conexEnlaces.cambiarCurso(peticionActual.usuario, numcurso))
+                        {
+                            enviarRespuesta("cursoCambiado", null, null, null, response);
+                            ConsolaDebug.escribirEnConsola("INFO", "Nuevo {0} guardado en BD existósamente", curso);
+                        }
+                        else
+                        {
+                            enviarRespuesta("error", null, null, null, response);
+                            ConsolaDebug.escribirEnConsola("WARNING", "¡ATENCIóN! Error al cambiar el curso del usuario en la BD");
+                        }
+                    }
+
+                }
+
+                // Petición de envio de reporte por email
+                else if (peticionActual.peticion.Equals("emailReporte"))
+                {
+                    // Comprobamos el token de sesión
+                    if (comprobarTokenValido(peticionActual, conexUsuarios, response))
+                    {
+                        ConsolaDebug.escribirEnConsola("INFO+", "Recibida petición de envio de reporte por {0}", peticionActual.usuario);
+                        string email = "doomknight87@gmail.com"; // Cambiar esta dirección por una buena
+                        if (EnviarEmail.reporte(peticionActual.usuario, email, peticionActual.datos["titulo"], peticionActual.datos["reporte"]))
+                        {
+                            enviarRespuesta("emailReporteEnviado", null, null, null, response);
+                            ConsolaDebug.escribirEnConsola("INFO", "¡Email de reporte enviado!");
+                        }
+                        else
+                        {
+                            enviarRespuesta("error", null, null, null, response);
+                        }
+                    }
+                }
+
+                // Petición de envio de token a email por contraseña perdida
+                else if (peticionActual.peticion.Equals("emailPassPerdida"))
+                {
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida petición de token para restaurar contraseña por {0}", peticionActual.usuario);
+                    string token = GeneradorTokens.GenerarToken(64);
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Token generado: {0}", token);
+                    string email = peticionActual.datos["email"];
+                    ConsolaDebug.escribirEnConsola("INFO", "Enviando token a: {0}", email);
+                    if (EnviarEmail.passPerdida(email, token))
+                    {
+                        enviarRespuesta("emailConTokenEnviado", token, null, null, response);
+                        ConsolaDebug.escribirEnConsola("INFO", "¡Email enviado! Esperando confirmación.");
+                    }
+                    else
+                    {
+                        enviarRespuesta("error", null, null, null, response);
+                    }
+                }
+
+                // Petición de restaurar clave
+                else if (peticionActual.peticion.Equals("restaurarPass"))
+                {
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida petición de restaurar contraseña desde email: {0}", peticionActual.usuario);
+                    // Consulta clave
+                    claveEncriptada = conexUsuarios.obtenerPassHash(peticionActual);
+                    if (conexUsuarios.actualizarPassEnBBDD(peticionActual.clave, peticionActual.usuario))
+                    {
+                        ConsolaDebug.escribirEnConsola("INFO", "Nueva contraseña guardada en BD existósamente");
+                        enviarRespuesta("passCambiada", null, null, null, response);
+                    }
+                    else
+                    {
+                        ConsolaDebug.escribirEnConsola("WARNING", "¡ATENCIóN! Error al guardar la nueva contraseña en BD");
+                        enviarRespuesta("passNoCambiada", null, null, null, response);
+                    }
+
                 }
             }
             catch (Exception e)
@@ -379,8 +463,8 @@ namespace ServidorConexion
         {
             string salCifrada = null;
             string tokenCifrado = null;
-            //escribirEnConsola("DEBUG", "Token sin cifrar: {0}, token);
-            //escribirEnConsola("DEBUG", "Sal sin cifrar: {0}", sal);
+            //ConsolaDebug.escribirEnConsola("DEBUG", "Token sin cifrar: {0}, token);
+            //ConsolaDebug.escribirEnConsola("DEBUG", "Sal sin cifrar: {0}", sal);
             if (sal != null)
             {
                 salCifrada = CifradoJson.Cifrado(sal, resp);
@@ -397,9 +481,9 @@ namespace ServidorConexion
                 coleccion = colec
 
             };
-            //escribirEnConsola("DEBUG", "Respuesta: {0}, respuesta.respuesta);
-            //escribirEnConsola("DEBUG", "Token cifrado: {0}, respuesta.token);
-            //escribirEnConsola("DEBUG", "Sal cifrada: {0}", respuesta.salt);
+            //ConsolaDebug.escribirEnConsola("DEBUG", "Respuesta: {0}, respuesta.respuesta);
+            //ConsolaDebug.escribirEnConsola("DEBUG", "Token cifrado: {0}, respuesta.token);
+            //ConsolaDebug.escribirEnConsola("DEBUG", "Sal cifrada: {0}", respuesta.salt);
 
             // Serializa nuestra clase en una cadena JSON
             var stringRespuesta = await Task.Run(() => JsonConvert.SerializeObject(respuesta));
@@ -431,7 +515,7 @@ namespace ServidorConexion
             }else
             {
                 ConsolaDebug.escribirEnConsola("WARNING", "¡ATENCIóN! Token del usuario no válido, petición {0} rechazada", peticionActual.peticion);
-                enviarRespuesta("passNoValida", null, null, null, response);
+                enviarRespuesta("tokenNoValido", null, null, null, response);
                 return false;
             }
             
