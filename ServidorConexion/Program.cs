@@ -193,9 +193,39 @@ namespace ServidorConexion
                 else if (peticionActual.peticion.Equals("obtenerColeccionEnlaces"))
                 {
                     ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de enlaces por el usuario {0}", peticionActual.usuario);
-                    List<Enlaces> coleccion = conexEnlaces.obtenerColeccionEnlaces();
-                    enviarRespuesta("coleccionEnviada", null, null, JArray.FromObject(coleccion), response);
-                    ConsolaDebug.escribirEnConsola("INFO", "Colección enviada al cliente satisfactoriamente");
+                    string asignatura = peticionActual.datos["asignatura"];
+                    List<Enlaces> coleccion = conexEnlaces.obtenerColeccionEnlaces(asignatura);
+                    if(coleccion == null)
+                    {
+                        enviarRespuesta("coleccionEnviada", null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Colección vacia");
+                    }
+                    else
+                    {
+                        enviarRespuesta("coleccionEnviada", null, null, JArray.FromObject(coleccion), response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Colección enviada al cliente satisfactoriamente");
+                    }
+                    
+                }
+                // Petición para sumar votación a un enlace
+                else if (peticionActual.peticion.Contains("sumarYRestarValoracion"))
+                {
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de sumar valoracion por el usuario {0}", peticionActual.usuario);
+                    
+                    int id = int.Parse(peticionActual.datos["id"]);
+                    string operacion = peticionActual.datos["operacion"];
+                    string actualizado = conexEnlaces.sumarYRestarValoracion(id,operacion);
+                    if (actualizado.Equals("correcto"))
+                    {
+                        enviarRespuesta(actualizado, null, null,null, response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Actualizacion de valoración realizada correctamente");
+                    }
+                    else
+                    {
+                        enviarRespuesta(actualizado, null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Actualizacion de valoración incorrecta");
+                    }
+                    
                 }
 
                 // Petición de envio de token a email

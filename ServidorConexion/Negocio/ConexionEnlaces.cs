@@ -27,13 +27,13 @@ namespace ServidorConexion.Negocio
             }
         }
 
-        public List<Enlaces> obtenerColeccionEnlaces()
+        public List<Enlaces> obtenerColeccionEnlaces(string asignatura)
         {
             conectar();
             MySqlCommand cmd = new MySqlCommand();
             //La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas
-            cmd.CommandText = "Select * from enlaces";
-            //cmd.Parameters.AddWithValue("@pass", pass);
+            cmd.CommandText = "select e.Id,e.Link,e.Titulo,e.Descripcion,e.Valoracion,e.Imagen,e.Tipo,e.Tema,e.Uploader,e.Activo from enlaces e JOIN temas t on e.Tema = t.id JOIN asignaturas a on t.Asignatura = a.Id where a.Nombre = @asignatura AND e.activo = 1; ";
+            cmd.Parameters.AddWithValue("@asignatura", asignatura);
             cmd.Connection = conexion;
             MySqlDataReader Datos = cmd.ExecuteReader();
             List<Enlaces> listaEnlaces = null;
@@ -103,6 +103,86 @@ namespace ServidorConexion.Negocio
                 conexion.Close();
                 return "null";
             }
+        }
+
+        public string sumarYRestarValoracion(int id, string operacion)
+        {
+            if(id > 0)
+            {
+                conectar();
+                MySqlCommand cmd = new MySqlCommand();
+                cmd.CommandText = "Select valoracion from enlaces WHERE id = @id";
+                cmd.Parameters.AddWithValue("@id", id);
+                cmd.Connection = conexion;
+                MySqlDataReader login = cmd.ExecuteReader();
+                if (login.Read())
+                {
+                    int valoracion = int.Parse(login.GetString(0));
+                    if (operacion.Equals("sumar"))
+                    {
+                        if(valoracion == 100)
+                        {
+                            return "correcto";
+                        }
+                        else
+                        {
+                            valoracion += 1;
+                        }
+                    }
+                    else if(operacion.Equals("restar"))
+                    {
+                        if (valoracion == 0)
+                        {
+                            return "correcto";
+                        }
+                        else
+                        {
+                            valoracion -= 1;
+                        }
+                    }
+                    
+                    
+                    conexion.Close();
+
+                    conectar();
+                    cmd = new MySqlCommand();
+                    // La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas
+                    string sql = "UPDATE enlaces SET valoracion = @val WHERE id = @id";
+                    cmd.Parameters.AddWithValue("@val", valoracion);
+                    cmd.Parameters.AddWithValue("@id", id);
+                    cmd.CommandText = sql;
+                    cmd.Connection = conexion;
+                    if (cmd.ExecuteNonQuery() == 1) // El usuario se ha guardado
+                    {
+                        conexion.Close();
+                        return "correcto";
+                    }
+                    else
+                    {
+                        conexion.Close();
+                        return "incorrecto";
+                    }
+                    
+
+                    //cmd.CommandText = "UPDATE enlaces SET valoracion = @val WHERE id = @id";
+                    ////cmd.Parameters.AddWithValue("@val", valoracion);
+                    ////cmd.Parameters.AddWithValue("@id", id);
+                    //cmd.Connection = conexion;
+                    //cmd.ExecuteNonQuery();
+
+                    //conexion.Close();
+                    //return "correcto";
+                }
+                else
+                {
+                    conexion.Close();
+                    return "incorrecto";
+                }
+            }else
+            {
+                return "incorrecto";
+            }
+            
         }
 
     }
