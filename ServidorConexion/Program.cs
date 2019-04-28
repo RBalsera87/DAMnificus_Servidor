@@ -194,7 +194,8 @@ namespace ServidorConexion
                 {
                     ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de enlaces por el usuario {0}", peticionActual.usuario);
                     string asignatura = peticionActual.datos["asignatura"];
-                    List<Enlaces> coleccion = conexEnlaces.obtenerColeccionEnlaces(asignatura);
+                    string usuario = peticionActual.usuario;
+                    List<Enlaces> coleccion = conexEnlaces.obtenerColeccionEnlaces(asignatura,usuario);
                     if(coleccion == null)
                     {
                         enviarRespuesta("coleccionEnviada", null, null, null, response);
@@ -208,7 +209,7 @@ namespace ServidorConexion
                     
                 }
                 // Petición para sumar votación a un enlace
-                else if (peticionActual.peticion.Contains("sumarYRestarValoracion"))
+                else if (peticionActual.peticion.Equals("sumarYRestarValoracion"))
                 {
                     ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de sumar valoracion por el usuario {0}", peticionActual.usuario);
                     
@@ -226,6 +227,25 @@ namespace ServidorConexion
                         ConsolaDebug.escribirEnConsola("INFO", "Actualizacion de valoración incorrecta");
                     }
                     
+                }
+                else if (peticionActual.peticion.Equals("cambiarActivoRevisionDesactivo")){
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de cambiar estado Activo/Desactivo/Revisión por el usuario {0}", peticionActual.usuario);
+
+                    int id = int.Parse(peticionActual.datos["id"]);
+                    string user = peticionActual.usuario;
+                    string actualizado =conexEnlaces.cambiarActivoRevisionDesactivo(id, user);
+                    if (actualizado.Equals("correcto"))
+                    {
+                        string email = "damnificusjovellanos@gmail.com";
+                        EnviarEmail.reporte(peticionActual.usuario, email, "Link caído","El link con id " + id + " ha sido reportado como caido. Revísenlo.");
+                        enviarRespuesta(actualizado, null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Actualizacion enlace Activo/Desactivo/Revisión realizada correctamente");
+                    }
+                    else
+                    {
+                        enviarRespuesta(actualizado, null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Actualizacion enlace Activo/Desactivo/Revisión incorrecta");
+                    }
                 }
 
                 // Petición de envio de token a email por registro
@@ -393,7 +413,7 @@ namespace ServidorConexion
                     if (comprobarTokenValido(peticionActual, conexUsuarios, response))
                     {
                         ConsolaDebug.escribirEnConsola("INFO+", "Recibida petición de envio de reporte por {0}", peticionActual.usuario);
-                        string email = "doomknight87@gmail.com"; // Cambiar esta dirección por una buena
+                        string email = "damnificusjovellanos@gmail.com"; // Cambiar esta dirección por una buena
                         if (EnviarEmail.reporte(peticionActual.usuario, email, peticionActual.datos["titulo"], peticionActual.datos["reporte"]))
                         {
                             enviarRespuesta("emailReporteEnviado", null, null, null, response);
