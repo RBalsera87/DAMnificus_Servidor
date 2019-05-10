@@ -363,6 +363,28 @@ namespace ServidorConexion
 
                 }
 
+                else if (peticionActual.peticion.Equals("sacarUsuario"))
+                {
+                    // Comprobamos el token de sesión
+                    if (comprobarTokenValido(peticionActual, conexUsuarios, response))
+                    {
+                        ConsolaDebug.escribirEnConsola("INFO+", "Recibida petición de obtener el ID de {0}", peticionActual.usuario);
+                        string usuario = peticionActual.datos["usuario"];
+                        int user = conexEnlaces.sacarUsuario(usuario);
+                        if (user != 0)
+                        {
+                            //ConsolaDebug.escribirEnConsola("DEBUG", "Respuesta: {0}", "curso" + curso);
+                            enviarRespuesta(user.ToString(), null, null, null, response);
+                            ConsolaDebug.escribirEnConsola("INFO", "Respondiendo al usuario con ID: {0}", user.ToString());
+                        }
+                        else
+                        {
+                            enviarRespuesta("error", null, null, null, response);
+                            ConsolaDebug.escribirEnConsola("WARNING", "¡ATENCIóN! Error al obtener el curso del usuario en la BD");
+                        }
+                    }
+                }
+
                 // Petición para cambiar el curso actual del usuario
                 else if (peticionActual.peticion.Equals("cambiarCurso"))
                 {
@@ -442,6 +464,23 @@ namespace ServidorConexion
                         enviarRespuesta("passNoCambiada", null, null, null, response);
                     }
 
+                }
+
+                else if (peticionActual.peticion.Equals("obtenerNombreAsignaturas"))
+                {
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de asignaturas por el usuario {0}", peticionActual.usuario);
+                    string curso = peticionActual.datos["curso"];
+                    List<string> coleccion = conexEnlaces.obtenerNombreAsignaturas(curso);
+                    if (coleccion == null)
+                    {
+                        enviarRespuesta("coleccionEnviada", null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Colección vacia");
+                    }
+                    else
+                    {
+                        enviarRespuesta("coleccionEnviada", null, null, JArray.FromObject(coleccion), response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Colección enviada al cliente satisfactoriamente");
+                    }
                 }
             }
             catch (Exception e)

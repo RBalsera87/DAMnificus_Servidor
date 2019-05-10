@@ -64,6 +64,28 @@ namespace ServidorConexion.Negocio
             return listaEnlaces;
 
         }
+
+        public List<string> obtenerNombreAsignaturas(string curso)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            //La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas
+            cmd.CommandText = "SELECT Nombre FROM asignaturas WHERE curso = @curso  ORDER BY Id";
+            cmd.Parameters.AddWithValue("@curso", curso);
+            cmd.Connection = conexion;
+            MySqlDataReader Datos = cmd.ExecuteReader();
+            List<string> listaAsignaturas = new List<string> { };
+            if (Datos.HasRows)
+            {
+                while (Datos.Read())
+                {
+                    listaAsignaturas.Add(Datos.GetString(0));
+                }
+            }
+            conexion.Close();
+            return listaAsignaturas;
+
+        }
         public bool introducirUsuarioEnBBDD(string usuario)
         {
             conectar();
@@ -102,6 +124,27 @@ namespace ServidorConexion.Negocio
             {
                 conexion.Close();
                 return "null";
+            }
+        }
+
+        public int sacarUsuario(string usuario)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.CommandText = "Select Id from usuarios where BINARY Nombre = @user";
+            cmd.Parameters.AddWithValue("@user", usuario);
+            cmd.Connection = conexion;
+            MySqlDataReader reader = cmd.ExecuteReader();
+            if (reader.Read())
+            {
+                int user = reader.GetInt32(0);
+                conexion.Close();
+                return user;
+            }
+            else
+            {
+                conexion.Close();
+                return -1;
             }
         }
         public bool cambiarCurso(string usuario, int curso)
@@ -204,6 +247,24 @@ namespace ServidorConexion.Negocio
                 return "incorrecto";
             }
             
+        }
+
+        public int sacarCurso(string usuario)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.CommandText = "SELECT Curso FROM usuarios WHERE Nombre = @usuario";
+            cmd.Parameters.AddWithValue("@usuario", usuario);
+            cmd.Connection = conexion;
+            MySqlDataReader reader = cmd.ExecuteReader();
+            int salida = 0;
+            
+            while (reader.Read())
+            {
+                salida = reader.GetInt16(0);
+            }           
+
+            return salida;
         }
 
     }
