@@ -91,6 +91,53 @@ namespace ServidorConexion.Negocio
             return listaAsignaturas;
 
         }
+
+        public List<double> recogidaNotas(string curso, string usuario)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            //La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas
+            cmd.CommandText = "SELECT n.Nota FROM notas n INNER JOIN asignaturas a ON n.Asignatura = a.Id WHERE a.Curso = @curso AND n.Usuario = @usuario ORDER BY a.Id, n.Trimestre";
+            cmd.Parameters.AddWithValue("@curso", curso);
+            cmd.Parameters.AddWithValue("@usuario", usuario);
+            cmd.Connection = conexion;
+            MySqlDataReader Datos = cmd.ExecuteReader();
+            List<double> listaNotas = new List<double> { };
+            if (Datos.HasRows)
+            {
+                while (Datos.Read())
+                {
+                    listaNotas.Add((double)Datos.GetDecimal(0));
+                }
+            }
+            conexion.Close();
+            return listaNotas;
+
+        }
+
+        public List<double> mediaNotas(string curso, string usuario)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            //La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas
+            cmd.CommandText = "SELECT CAST( AVG( n.Nota ) AS DECIMAL( 4, 2 ) ) FROM notas n INNER JOIN asignaturas a ON n.Asignatura = a.Id WHERE a.Curso = @curso AND n.Usuario = @usuario GROUP BY n.Asignatura ORDER BY a.Id";
+            cmd.Parameters.AddWithValue("@curso", curso);
+            cmd.Parameters.AddWithValue("@usuario", usuario);
+            cmd.Connection = conexion;
+            MySqlDataReader Datos = cmd.ExecuteReader();
+            List<double> listaNotas = new List<double> { };
+            if (Datos.HasRows)
+            {
+                while (Datos.Read())
+                {
+                    listaNotas.Add((double)Datos.GetDecimal(0));
+                }
+            }
+            conexion.Close();
+            return listaNotas;
+
+        }
+
         public bool introducirUsuarioEnBBDD(string usuario)
         {
             conectar();

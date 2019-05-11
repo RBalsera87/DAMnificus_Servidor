@@ -383,6 +383,7 @@ namespace ServidorConexion
 
                 }
 
+                //Peticion para obtener el ID en la base de datos del usuario que hace la petición.
                 else if (peticionActual.peticion.Equals("sacarUsuario"))
                 {
                     // Comprobamos el token de sesión
@@ -486,6 +487,7 @@ namespace ServidorConexion
 
                 }
 
+                //Petición para obtener el nombre de las asignaturas del curso matriculado del usuario.
                 else if (peticionActual.peticion.Equals("obtenerNombreAsignaturas"))
                 {
                     ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de asignaturas por el usuario {0}", peticionActual.usuario);
@@ -502,6 +504,45 @@ namespace ServidorConexion
                         ConsolaDebug.escribirEnConsola("INFO", "Colección enviada al cliente satisfactoriamente");
                     }
                 }
+
+                //Petición para obtener el listado completo de las notas del curso en el que está matriculado el usuario.
+                else if (peticionActual.peticion.Equals("recogidaNotas"))
+                {
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de notas individuales por el usuario {0}", peticionActual.usuario);
+                    string curso = peticionActual.datos["curso"];
+                    string user = peticionActual.datos["usuario"];
+                    List<double> coleccion = conexEnlaces.recogidaNotas(curso, user);
+                    if (coleccion == null)
+                    {
+                        enviarRespuesta("coleccionEnviada", null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Colección vacia");
+                    }
+                    else
+                    {
+                        enviarRespuesta("coleccionEnviada", null, null, JArray.FromObject(coleccion), response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Colección enviada al cliente satisfactoriamente");
+                    }
+                }
+
+                //Peticion para obtener el listado de las medias de las notas del curso en el que esta matriculado el usuario.
+                else if (peticionActual.peticion.Equals("mediaNotas"))
+                {
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de notas medias por el usuario {0}", peticionActual.usuario);
+                    string curso = peticionActual.datos["curso"];
+                    string user = peticionActual.datos["usuario"];
+                    List<double> coleccion = conexEnlaces.mediaNotas(curso, user);
+                    if (coleccion == null)
+                    {
+                        enviarRespuesta("coleccionEnviada", null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Colección vacia");
+                    }
+                    else
+                    {
+                        enviarRespuesta("coleccionEnviada", null, null, JArray.FromObject(coleccion), response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Colección enviada al cliente satisfactoriamente");
+                    }
+                }
+
             }
             catch (Exception e)
             {
