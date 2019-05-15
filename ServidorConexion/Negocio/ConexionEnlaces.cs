@@ -92,6 +92,28 @@ namespace ServidorConexion.Negocio
 
         }
 
+        public List<string> obtenerNombreTemas(string asignatura)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            //La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas
+            cmd.CommandText = "SELECT Nombre FROM temas WHERE asignatura = (SELECT Id FROM asignaturas WHERE Nombre = @asignatura)  ORDER BY Id";
+            cmd.Parameters.AddWithValue("@asignatura", asignatura);
+            cmd.Connection = conexion;
+            MySqlDataReader Datos = cmd.ExecuteReader();
+            List<string> listaTemas = new List<string> { };
+            if (Datos.HasRows)
+            {
+                while (Datos.Read())
+                {
+                    listaTemas.Add(Datos.GetString(0));
+                }
+            }
+            conexion.Close();
+            return listaTemas;
+
+        }
+
         public List<double> recogidaNotas(string curso, string usuario)
         {
             conectar();
@@ -216,6 +238,32 @@ namespace ServidorConexion.Negocio
             {
                 conexion.Close();
                 return "null";
+            }
+        }
+        public bool introducirNuevoEnlace(string usuario, string titulo, string imagen, string descripcion, string tipo, string enlace, string tema)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+
+            string sql = "INSERT INTO enlaces VALUES( null, @enlace, @titulo, @descripcion, 50, @imagen, @tipo, (SELECT Id FROM temas WHERE Nombre = @tema), (SELECT Id FROM usuarios WHERE Nombre = @user), 1 )"; // Cambiar a 0 el ultimo valor!!!!
+            cmd.Parameters.AddWithValue("@enlace", enlace);
+            cmd.Parameters.AddWithValue("@titulo", titulo);
+            cmd.Parameters.AddWithValue("@imagen", imagen);
+            cmd.Parameters.AddWithValue("@descripcion", descripcion);
+            cmd.Parameters.AddWithValue("@tipo", tipo);
+            cmd.Parameters.AddWithValue("@tema", tema);
+            cmd.Parameters.AddWithValue("@user", usuario);
+            cmd.CommandText = sql;
+            cmd.Connection = conexion;
+            if (cmd.ExecuteNonQuery() == 1) // El enlace se ha guardado
+            {
+                conexion.Close();
+                return true;
+            }
+            else
+            {
+                conexion.Close();
+                return false;
             }
         }
 
@@ -401,6 +449,7 @@ namespace ServidorConexion.Negocio
         }
 
         public int sacarCurso(string usuario)
+            // @ValenSB (Valentín) creo que este metodo es igual que el que hice yo hace un mes que se llama obtenerCurso o_O
         {
             conectar();
             MySqlCommand cmd = new MySqlCommand();
