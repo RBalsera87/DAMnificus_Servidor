@@ -138,6 +138,46 @@ namespace ServidorConexion.Negocio
 
         }
 
+        public string hayNota(string trimestre, string asignatura, string usuario)
+        {
+            string salida = "no";
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.CommandText = "SELECT Nota FROM notas WHERE Trimestre = @trimestre AND Asignatura = (SELECT Id FROM asignaturas WHERE Nombre = @asignatura) AND Usuario = @usuario";
+            cmd.Parameters.AddWithValue("@trimestre", trimestre);
+            cmd.Parameters.AddWithValue("@asignatura", asignatura);
+            cmd.Parameters.AddWithValue("@usuario", usuario);
+            cmd.Connection = conexion;
+            MySqlDataReader Datos = cmd.ExecuteReader();
+            if(Datos.HasRows)
+            {
+                while (Datos.Read())
+                {
+                    int aux = (int)Datos.GetDecimal(0);
+                    if (aux > 0)
+                    {
+                        salida = "si";
+                    }
+                }
+            }
+            conexion.Close();
+            return salida;
+        }
+
+        public void agregarNota(string nota, string trimestre, string asignatura, string usuario)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.CommandText = "UPDATE notas SET Nota = @nota WHERE Trimestre = @trimestre AND Asignatura = (SELECT Id FROM asignaturas WHERE Nombre = @asignatura) AND Usuario = @usuario";
+            cmd.Parameters.AddWithValue("nota", nota);
+            cmd.Parameters.AddWithValue("@trimestre", trimestre);
+            cmd.Parameters.AddWithValue("@asignatura", asignatura);
+            cmd.Parameters.AddWithValue("@usuario", usuario);
+            cmd.Connection = conexion;
+            cmd.ExecuteNonQuery();
+            conexion.Close();
+        }
+
         public bool introducirUsuarioEnBBDD(string usuario)
         {
             conectar();

@@ -543,6 +543,31 @@ namespace ServidorConexion
                     }
                 }
 
+                //Petición para saber si hay una nota introducida > 0 en la base de datos
+                else if(peticionActual.peticion.Equals("hayNota"))
+                {
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de comprobación de nota por el usuario {0}", peticionActual.usuario);
+                    string trimestre = peticionActual.datos["trimestre"];
+                    string asignatura = peticionActual.datos["asignatura"];
+                    string usuario = peticionActual.datos["usuario"];
+                    string hay = conexEnlaces.hayNota(trimestre, asignatura, usuario);
+                    enviarRespuesta(hay, null, null, null, response);
+                    ConsolaDebug.escribirEnConsola("INFO", "Información enviada correctamente");
+                }
+
+                //Petición para cambiar la nota al usuario
+                else if (peticionActual.peticion.Equals("agregarNota"))
+                {
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de cambio de nota por el usuario {0}", peticionActual.usuario);
+                    string nota = peticionActual.datos["nota"];
+                    string trimestre = peticionActual.datos["trimestre"];
+                    string asignatura = peticionActual.datos["asignatura"];
+                    string usuario = peticionActual.datos["usuario"];
+                    conexEnlaces.agregarNota(nota, trimestre, asignatura, usuario);
+                    enviarRespuesta(null, null, null, null, response);
+                    ConsolaDebug.escribirEnConsola("INFO", "Nota cambiada");
+                }
+
             }
             catch (Exception e)
             {
