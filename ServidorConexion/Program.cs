@@ -23,7 +23,7 @@ namespace ServidorConexion
                 ConsolaDebug.escribirEnConsola("INFO", "Servidor iniciado");
                 httpListener = new HttpListener
                 {
-                    Prefixes = { "http://localhost:8080/" },
+                    Prefixes = { "http://localhost:8080/damnificus/" },
                 };
 
                 httpListener.Start();
@@ -186,6 +186,23 @@ namespace ServidorConexion
                     {
                         enviarRespuesta("error", null, null, null, response);
                         ConsolaDebug.escribirEnConsola("WARNING", "¡ATENCIóN! Problema al borrar el token del usuario {0}", peticionActual.usuario);
+                    }
+                }
+
+                // Petición de credenciales del usuario
+                else if (peticionActual.peticion.Equals("obtenerCredenciales"))
+                {
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de credenciales por el usuario {0}", peticionActual.usuario);
+                    string rango = conexUsuarios.obtenerCredenciales(peticionActual.usuario);
+                    if (rango != null)
+                    {
+                        enviarRespuesta(rango, null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Respondiendo con el rango: {0}", rango);
+                    }
+                    else
+                    {
+                        enviarRespuesta("error", null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("WARNING", "¡ATENCIóN! Problema al obtener las credenciales del usuario {0}", peticionActual.usuario);
                     }
                 }
 
@@ -530,13 +547,15 @@ namespace ServidorConexion
                     if (comprobarTokenValido(peticionActual, conexUsuarios, response))
                     {
                         ConsolaDebug.escribirEnConsola("INFO+", "Recibida petición de subir enlace por el usuario {0}", peticionActual.usuario);
+                        string rango = conexUsuarios.obtenerCredenciales(peticionActual.usuario);
                         string titulo = peticionActual.datos["titulo"];
                         string imagen = peticionActual.datos["imagen"];
                         string descripcion = peticionActual.datos["descripcion"];
                         string tipo = peticionActual.datos["tipo"];
                         string enlace = peticionActual.datos["enlace"];
                         string tema = peticionActual.datos["tema"];
-                        if (conexEnlaces.introducirNuevoEnlace(peticionActual.usuario, titulo, imagen, descripcion, tipo, enlace, tema))
+                        
+                        if (conexEnlaces.introducirNuevoEnlace(peticionActual.usuario, titulo, imagen, descripcion, tipo, enlace, tema, rango))
                         {
                             ConsolaDebug.escribirEnConsola("INFO", "Nuevo enlace guardado en BD existósamente");
                             enviarRespuesta("enlaceInsertado", null, null, null, response);

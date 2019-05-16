@@ -240,12 +240,12 @@ namespace ServidorConexion.Negocio
                 return "null";
             }
         }
-        public bool introducirNuevoEnlace(string usuario, string titulo, string imagen, string descripcion, string tipo, string enlace, string tema)
+        public bool introducirNuevoEnlace(string usuario, string titulo, string imagen, string descripcion, string tipo, string enlace, string tema, string rango)
         {
             conectar();
             MySqlCommand cmd = new MySqlCommand();
 
-            string sql = "INSERT INTO enlaces VALUES( null, @enlace, @titulo, @descripcion, 50, @imagen, @tipo, (SELECT Id FROM temas WHERE Nombre = @tema), (SELECT Id FROM usuarios WHERE Nombre = @user), 1 )"; // Cambiar a 0 el ultimo valor!!!!
+            string sql = "INSERT INTO enlaces VALUES( null, @enlace, @titulo, @descripcion, 50, @imagen, @tipo, (SELECT Id FROM temas WHERE Nombre = @tema), (SELECT Id FROM usuarios WHERE Nombre = @user), @rango )"; // Cambiar a 0 el ultimo valor!!!!
             cmd.Parameters.AddWithValue("@enlace", enlace);
             cmd.Parameters.AddWithValue("@titulo", titulo);
             cmd.Parameters.AddWithValue("@imagen", imagen);
@@ -253,6 +253,10 @@ namespace ServidorConexion.Negocio
             cmd.Parameters.AddWithValue("@tipo", tipo);
             cmd.Parameters.AddWithValue("@tema", tema);
             cmd.Parameters.AddWithValue("@user", usuario);
+            if (rango.Equals("admin")) // Si es admin el link se sube ya en activo
+                cmd.Parameters.AddWithValue("@rango", 1);
+            else
+                cmd.Parameters.AddWithValue("@rango", 0);
             cmd.CommandText = sql;
             cmd.Connection = conexion;
             if (cmd.ExecuteNonQuery() == 1) // El enlace se ha guardado
