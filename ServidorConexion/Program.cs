@@ -23,7 +23,7 @@ namespace ServidorConexion
                 ConsolaDebug.escribirEnConsola("INFO", "Servidor iniciado");
                 httpListener = new HttpListener
                 {
-                    Prefixes = { "http://localhost:8080/" },
+                    Prefixes = { "http://localhost:8080/damnificus/" },
                 };
 
                 httpListener.Start();
@@ -186,6 +186,23 @@ namespace ServidorConexion
                     {
                         enviarRespuesta("error", null, null, null, response);
                         ConsolaDebug.escribirEnConsola("WARNING", "¡ATENCIóN! Problema al borrar el token del usuario {0}", peticionActual.usuario);
+                    }
+                }
+
+                // Petición de credenciales del usuario
+                else if (peticionActual.peticion.Equals("obtenerCredenciales"))
+                {
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de credenciales por el usuario {0}", peticionActual.usuario);
+                    string rango = conexUsuarios.obtenerCredenciales(peticionActual.usuario);
+                    if (rango != null)
+                    {
+                        enviarRespuesta(rango, null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Respondiendo con el rango: {0}", rango);
+                    }
+                    else
+                    {
+                        enviarRespuesta("error", null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("WARNING", "¡ATENCIóN! Problema al obtener las credenciales del usuario {0}", peticionActual.usuario);
                     }
                 }
 
@@ -506,7 +523,7 @@ namespace ServidorConexion
 
                 }
 
-                //Petición para obtener el nombre de las asignaturas del curso matriculado del usuario.
+                // Petición para obtener el nombre de las asignaturas de un curso.
                 else if (peticionActual.peticion.Equals("obtenerNombreAsignaturas"))
                 {
                     ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de asignaturas por el usuario {0}", peticionActual.usuario);
@@ -524,7 +541,55 @@ namespace ServidorConexion
                     }
                 }
 
-                //Petición para obtener el listado completo de las notas del curso en el que está matriculado el usuario.
+                // Petición para obtener el nombre de los temas de una asignatura.
+                else if (peticionActual.peticion.Equals("obtenerNombreTemas"))
+                {
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de temas por el usuario {0}", peticionActual.usuario);
+                    string asignatura = peticionActual.datos["asignatura"];
+                    List<string> coleccion = conexEnlaces.obtenerNombreTemas(asignatura);
+                    if (coleccion == null)
+                    {
+                        enviarRespuesta("coleccionEnviada", null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Colección vacia");
+                    }
+                    else
+                    {
+                        enviarRespuesta("coleccionEnviada", null, null, JArray.FromObject(coleccion), response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Colección enviada al cliente satisfactoriamente");
+                    }
+                }
+
+                // Petición para subir un nuevo enlace
+                else if (peticionActual.peticion.Equals("subirEnlace"))
+                {
+                    // Comprobamos el token de sesión
+                    if (comprobarTokenValido(peticionActual, conexUsuarios, response))
+                    {
+                        ConsolaDebug.escribirEnConsola("INFO+", "Recibida petición de subir enlace por el usuario {0}", peticionActual.usuario);
+                        string rango = conexUsuarios.obtenerCredenciales(peticionActual.usuario);
+                        string titulo = peticionActual.datos["titulo"];
+                        string imagen = peticionActual.datos["imagen"];
+                        string descripcion = peticionActual.datos["descripcion"];
+                        string tipo = peticionActual.datos["tipo"];
+                        string enlace = peticionActual.datos["enlace"];
+                        string tema = peticionActual.datos["tema"];
+                        
+                        if (conexEnlaces.introducirNuevoEnlace(peticionActual.usuario, titulo, imagen, descripcion, tipo, enlace, tema, rango))
+                        {
+                            ConsolaDebug.escribirEnConsola("INFO", "Nuevo enlace guardado en BD existósamente");
+                            enviarRespuesta("enlaceInsertado", null, null, null, response);
+                        }
+                        else
+                        {
+                            ConsolaDebug.escribirEnConsola("WARNING", "¡ATENCIóN! Error al guardar el nuevo enlace en BD");
+                            enviarRespuesta("errorInsercion", null, null, null, response);
+                        }
+                    }
+                        
+
+                }
+
+                // Petición para obtener el listado completo de las notas del curso en el que está matriculado el usuario.
                 else if (peticionActual.peticion.Equals("recogidaNotas"))
                 {
                     ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de notas individuales por el usuario {0}", peticionActual.usuario);
@@ -543,7 +608,7 @@ namespace ServidorConexion
                     }
                 }
 
-                //Peticion para obtener el listado de las medias de las notas del curso en el que esta matriculado el usuario.
+                // Peticion para obtener el listado de las medias de las notas del curso en el que esta matriculado el usuario.
                 else if (peticionActual.peticion.Equals("mediaNotas"))
                 {
                     ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de notas medias por el usuario {0}", peticionActual.usuario);
@@ -560,6 +625,31 @@ namespace ServidorConexion
                         enviarRespuesta("coleccionEnviada", null, null, JArray.FromObject(coleccion), response);
                         ConsolaDebug.escribirEnConsola("INFO", "Colección enviada al cliente satisfactoriamente");
                     }
+                }
+
+                // Petición para saber si hay una nota introducida > 0 en la base de datos
+                else if(peticionActual.peticion.Equals("hayNota"))
+                {
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de comprobación de nota por el usuario {0}", peticionActual.usuario);
+                    string trimestre = peticionActual.datos["trimestre"];
+                    string asignatura = peticionActual.datos["asignatura"];
+                    string usuario = peticionActual.datos["usuario"];
+                    string hay = conexEnlaces.hayNota(trimestre, asignatura, usuario);
+                    enviarRespuesta(hay, null, null, null, response);
+                    ConsolaDebug.escribirEnConsola("INFO", "Información enviada correctamente");
+                }
+
+                // Petición para cambiar la nota al usuario
+                else if (peticionActual.peticion.Equals("agregarNota"))
+                {
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de cambio de nota por el usuario {0}", peticionActual.usuario);
+                    string nota = peticionActual.datos["nota"];
+                    string trimestre = peticionActual.datos["trimestre"];
+                    string asignatura = peticionActual.datos["asignatura"];
+                    string usuario = peticionActual.datos["usuario"];
+                    conexEnlaces.agregarNota(nota, trimestre, asignatura, usuario);
+                    enviarRespuesta(null, null, null, null, response);
+                    ConsolaDebug.escribirEnConsola("INFO", "Nota cambiada");
                 }
 
             }

@@ -231,7 +231,26 @@ namespace ServidorConexion
                 return "null";
             }
         }
+        public string obtenerCredenciales(string usuario)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.CommandText = "Select Rango from credenciales where Id = (SELECT Id FROM usuarios WHERE usuario = @user)";
+            cmd.Parameters.AddWithValue("@user", usuario);
+            cmd.Connection = conexion;
+            MySqlDataReader retorno = cmd.ExecuteReader();
+            if (retorno.Read())
+            {
+                string rango = retorno.GetString(0);
+                conexion.Close();
+                return rango;
+            }
+            else
+            {
+                conexion.Close();
+                return "null";
+            }
+        }
 
-        
     }
 }
