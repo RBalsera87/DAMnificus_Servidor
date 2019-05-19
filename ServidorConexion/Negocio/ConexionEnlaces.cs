@@ -300,6 +300,27 @@ namespace ServidorConexion.Negocio
             }
             
         }
+
+        public bool borrarEnlace(int id)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            string sql = "DELETE FROM enlaces WHERE id = @id";
+            cmd.Parameters.AddWithValue("@id", id);
+            cmd.CommandText = sql;
+            cmd.Connection = conexion;
+            if (cmd.ExecuteNonQuery() == 1)
+            {
+                conexion.Close();
+                return true;
+            }
+            else
+            {
+                conexion.Close();
+                return false;
+            }
+        }
+
         public string cambiarActivoRevisionDesactivo(int id,string usuario)
         {
             if (id > 0)
