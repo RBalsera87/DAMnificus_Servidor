@@ -92,28 +92,6 @@ namespace ServidorConexion.Negocio
 
         }
 
-        public List<string> obtenerNombreTemas(string asignatura)
-        {
-            conectar();
-            MySqlCommand cmd = new MySqlCommand();
-            //La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas
-            cmd.CommandText = "SELECT Nombre FROM temas WHERE asignatura = (SELECT Id FROM asignaturas WHERE Nombre = @asignatura)  ORDER BY Id";
-            cmd.Parameters.AddWithValue("@asignatura", asignatura);
-            cmd.Connection = conexion;
-            MySqlDataReader Datos = cmd.ExecuteReader();
-            List<string> listaTemas = new List<string> { };
-            if (Datos.HasRows)
-            {
-                while (Datos.Read())
-                {
-                    listaTemas.Add(Datos.GetString(0));
-                }
-            }
-            conexion.Close();
-            return listaTemas;
-
-        }
-
         public List<double> recogidaNotas(string curso, string usuario)
         {
             conectar();
@@ -160,46 +138,6 @@ namespace ServidorConexion.Negocio
 
         }
 
-        public string hayNota(string trimestre, string asignatura, string usuario)
-        {
-            string salida = "no";
-            conectar();
-            MySqlCommand cmd = new MySqlCommand();
-            cmd.CommandText = "SELECT Nota FROM notas WHERE Trimestre = @trimestre AND Asignatura = (SELECT Id FROM asignaturas WHERE Nombre = @asignatura) AND Usuario = @usuario";
-            cmd.Parameters.AddWithValue("@trimestre", trimestre);
-            cmd.Parameters.AddWithValue("@asignatura", asignatura);
-            cmd.Parameters.AddWithValue("@usuario", usuario);
-            cmd.Connection = conexion;
-            MySqlDataReader Datos = cmd.ExecuteReader();
-            if(Datos.HasRows)
-            {
-                while (Datos.Read())
-                {
-                    int aux = (int)Datos.GetDecimal(0);
-                    if (aux > 0)
-                    {
-                        salida = "si";
-                    }
-                }
-            }
-            conexion.Close();
-            return salida;
-        }
-
-        public void agregarNota(string nota, string trimestre, string asignatura, string usuario)
-        {
-            conectar();
-            MySqlCommand cmd = new MySqlCommand();
-            cmd.CommandText = "UPDATE notas SET Nota = @nota WHERE Trimestre = @trimestre AND Asignatura = (SELECT Id FROM asignaturas WHERE Nombre = @asignatura) AND Usuario = @usuario";
-            cmd.Parameters.AddWithValue("nota", nota);
-            cmd.Parameters.AddWithValue("@trimestre", trimestre);
-            cmd.Parameters.AddWithValue("@asignatura", asignatura);
-            cmd.Parameters.AddWithValue("@usuario", usuario);
-            cmd.Connection = conexion;
-            cmd.ExecuteNonQuery();
-            conexion.Close();
-        }
-
         public bool introducirUsuarioEnBBDD(string usuario)
         {
             conectar();
@@ -238,36 +176,6 @@ namespace ServidorConexion.Negocio
             {
                 conexion.Close();
                 return "null";
-            }
-        }
-        public bool introducirNuevoEnlace(string usuario, string titulo, string imagen, string descripcion, string tipo, string enlace, string tema, string rango)
-        {
-            conectar();
-            MySqlCommand cmd = new MySqlCommand();
-
-            string sql = "INSERT INTO enlaces VALUES( null, @enlace, @titulo, @descripcion, 50, @imagen, @tipo, (SELECT Id FROM temas WHERE Nombre = @tema), (SELECT Id FROM usuarios WHERE Nombre = @user), @rango )"; // Cambiar a 0 el ultimo valor!!!!
-            cmd.Parameters.AddWithValue("@enlace", enlace);
-            cmd.Parameters.AddWithValue("@titulo", titulo);
-            cmd.Parameters.AddWithValue("@imagen", imagen);
-            cmd.Parameters.AddWithValue("@descripcion", descripcion);
-            cmd.Parameters.AddWithValue("@tipo", tipo);
-            cmd.Parameters.AddWithValue("@tema", tema);
-            cmd.Parameters.AddWithValue("@user", usuario);
-            if (rango.Equals("admin")) // Si es admin el link se sube ya en activo
-                cmd.Parameters.AddWithValue("@rango", 1);
-            else
-                cmd.Parameters.AddWithValue("@rango", 0);
-            cmd.CommandText = sql;
-            cmd.Connection = conexion;
-            if (cmd.ExecuteNonQuery() == 1) // El enlace se ha guardado
-            {
-                conexion.Close();
-                return true;
-            }
-            else
-            {
-                conexion.Close();
-                return false;
             }
         }
 
@@ -312,26 +220,6 @@ namespace ServidorConexion.Negocio
             }
         }
 
-        public bool borrarEnlace(int id)
-        {
-            conectar();
-            MySqlCommand cmd = new MySqlCommand();
-            string sql = "DELETE FROM enlaces WHERE id = @id";
-            cmd.Parameters.AddWithValue("@id", id);
-            cmd.CommandText = sql;
-            cmd.Connection = conexion;
-            if (cmd.ExecuteNonQuery() == 1)
-            {
-                conexion.Close();
-                return true;
-            }
-            else
-            {
-                conexion.Close();
-                return false;
-            }
-        }
-
         public string sumarYRestarValoracion(int id, string operacion)
         {
             if(id > 0)
@@ -341,10 +229,10 @@ namespace ServidorConexion.Negocio
                 cmd.CommandText = "Select valoracion from enlaces WHERE id = @id";
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.Connection = conexion;
-                MySqlDataReader datos = cmd.ExecuteReader();
-                if (datos.Read())
+                MySqlDataReader login = cmd.ExecuteReader();
+                if (login.Read())
                 {
-                    int valoracion = int.Parse(datos.GetString(0));
+                    int valoracion = int.Parse(login.GetString(0));
                     if (operacion.Equals("sumar"))
                     {
                         if(valoracion == 100)
@@ -471,9 +359,26 @@ namespace ServidorConexion.Negocio
             }
             
         }
-
+        public bool borrarEnlace(int id)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            string sql = "DELETE FROM enlaces WHERE id = @id";
+            cmd.Parameters.AddWithValue("@id", id);
+            cmd.CommandText = sql;
+            cmd.Connection = conexion;
+            if (cmd.ExecuteNonQuery() == 1)
+            {
+                conexion.Close();
+                return true;
+            }
+            else
+            {
+                conexion.Close();
+                return false;
+            }
+        }
         public int sacarCurso(string usuario)
-            // @ValenSB (Valentín) creo que este metodo es igual que el que hice yo hace un mes que se llama obtenerCurso o_O
         {
             conectar();
             MySqlCommand cmd = new MySqlCommand();
