@@ -31,7 +31,7 @@ namespace ServidorConexion.Negocio
         {
             conectar();
             MySqlCommand cmd = new MySqlCommand();
-            cmd.CommandText = "select e.Id,e.Link,e.Titulo,e.Descripcion,e.Valoracion,e.Imagen,e.Tipo,e.Tema,e.Uploader,e.Activo from enlaces e JOIN temas t on e.Tema = t.id JOIN asignaturas a on t.Asignatura = a.Id where a.Nombre = @asignatura AND (e.activo = 1 OR e.activo = 2);";
+            cmd.CommandText = "select e.Id,e.Link,e.Titulo,e.Descripcion,e.Valoracion,e.Imagen,e.Tipo,t.Nombre,e.Uploader,e.Activo from enlaces e JOIN temas t on e.Tema = t.id JOIN asignaturas a on t.Asignatura = a.Id where a.Nombre = @asignatura AND (e.activo = 1 OR e.activo = 2);";
             cmd.Parameters.AddWithValue("@asignatura", asignatura);
             if (usuario.ToUpper().Equals("ADMIN"))
             {
@@ -220,6 +220,26 @@ namespace ServidorConexion.Negocio
             }
         }
 
+        public bool borrarEnlace(int id)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            string sql = "DELETE FROM enlaces WHERE id = @id";
+            cmd.Parameters.AddWithValue("@id", id);
+            cmd.CommandText = sql;
+            cmd.Connection = conexion;
+            if (cmd.ExecuteNonQuery() == 1)
+            {
+                conexion.Close();
+                return true;
+            }
+            else
+            {
+                conexion.Close();
+                return false;
+            }
+        }
+
         public string sumarYRestarValoracion(int id, string operacion)
         {
             if(id > 0)
@@ -229,10 +249,10 @@ namespace ServidorConexion.Negocio
                 cmd.CommandText = "Select valoracion from enlaces WHERE id = @id";
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.Connection = conexion;
-                MySqlDataReader login = cmd.ExecuteReader();
-                if (login.Read())
+                MySqlDataReader datos = cmd.ExecuteReader();
+                if (datos.Read())
                 {
-                    int valoracion = int.Parse(login.GetString(0));
+                    int valoracion = int.Parse(datos.GetString(0));
                     if (operacion.Equals("sumar"))
                     {
                         if(valoracion == 100)

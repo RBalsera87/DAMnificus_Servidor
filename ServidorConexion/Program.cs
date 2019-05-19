@@ -208,6 +208,25 @@ namespace ServidorConexion
                     }
                     
                 }
+                //Petición borrar enlace
+                else if (peticionActual.peticion.Equals("borrarEnlace"))
+                {
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de eliminar enlace por el usuario {0}", peticionActual.usuario);
+
+                    int id = int.Parse(peticionActual.datos["id"]);
+                    var actualizado = conexEnlaces.borrarEnlace(id);
+                    if (actualizado)
+                    {
+                        enviarRespuesta("correcto", null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Enlace borrado correctamente");
+                    }
+                    else
+                    {
+                        enviarRespuesta("incorrecto", null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Borrado de enlace incorrecto");
+                    }
+
+                }
                 // Petición para sumar votación a un enlace
                 else if (peticionActual.peticion.Equals("sumarYRestarValoracion"))
                 {
