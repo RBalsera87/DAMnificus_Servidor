@@ -91,7 +91,27 @@ namespace ServidorConexion.Negocio
             return listaAsignaturas;
 
         }
+        public List<string> obtenerNombreTemas(string asignatura)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            //La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas
+            cmd.CommandText = "SELECT Nombre FROM temas WHERE asignatura = (SELECT Id FROM asignaturas WHERE Nombre = @asignatura)  ORDER BY Id";
+            cmd.Parameters.AddWithValue("@asignatura", asignatura);
+            cmd.Connection = conexion;
+            MySqlDataReader Datos = cmd.ExecuteReader();
+            List<string> listaTemas = new List<string> { };
+            if (Datos.HasRows)
+            {
+                while (Datos.Read())
+                {
+                    listaTemas.Add(Datos.GetString(0));
+                }
+            }
+            conexion.Close();
+            return listaTemas;
 
+        }
         public List<double> recogidaNotas(string curso, string usuario)
         {
             conectar();
@@ -178,7 +198,36 @@ namespace ServidorConexion.Negocio
                 return "null";
             }
         }
+        public bool introducirNuevoEnlace(string usuario, string titulo, string imagen, string descripcion, string tipo, string enlace, string tema, string rango)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
 
+            string sql = "INSERT INTO enlaces VALUES( null, @enlace, @titulo, @descripcion, 50, @imagen, @tipo, (SELECT Id FROM temas WHERE Nombre = @tema), (SELECT Id FROM usuarios WHERE Nombre = @user), @rango )"; // Cambiar a 0 el ultimo valor!!!!
+            cmd.Parameters.AddWithValue("@enlace", enlace);
+            cmd.Parameters.AddWithValue("@titulo", titulo);
+            cmd.Parameters.AddWithValue("@imagen", imagen);
+            cmd.Parameters.AddWithValue("@descripcion", descripcion);
+            cmd.Parameters.AddWithValue("@tipo", tipo);
+            cmd.Parameters.AddWithValue("@tema", tema);
+            cmd.Parameters.AddWithValue("@user", usuario);
+            if (rango.Equals("admin")) // Si es admin el link se sube ya en activo
+                cmd.Parameters.AddWithValue("@rango", 1);
+            else
+                cmd.Parameters.AddWithValue("@rango", 0);
+            cmd.CommandText = sql;
+            cmd.Connection = conexion;
+            if (cmd.ExecuteNonQuery() == 1) // El enlace se ha guardado
+            {
+                conexion.Close();
+                return true;
+            }
+            else
+            {
+                conexion.Close();
+                return false;
+            }
+        }
         public int sacarUsuario(string usuario)
         {
             conectar();
@@ -394,6 +443,96 @@ namespace ServidorConexion.Negocio
             }           
 
             return salida;
+        }
+        public void borrarNotas(int usuario, int curso)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.CommandText = "delete from notas where Usuario = @usuario and Asignatura in (Select Id from asignaturas where Curso = @curso)";
+            cmd.Parameters.AddWithValue("@usuario", usuario);
+            cmd.Parameters.AddWithValue("@curso", curso);
+            cmd.Connection = conexion;
+            cmd.ExecuteNonQuery();
+            conexion.Close();
+        }
+
+        public void insertarNotasPrimero(int user)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.CommandText = "insert into notas (Usuario, Asignatura, Trimestre, Nota) values (@usuario, 1, 1, 0), (@usuario 1, 2, 0), (@usuario, 1, 3, 0), (@usuario, 2, 1, 0), (@usuario, 2, 2, 0), (@usuario, 2, 3, 0), (@usuario, 3, 1, 0), (@usuario, 3, 2, 0), (@usuario, 3, 3, 0), (@usuario, 4, 1, 0), (@usuario, 4, 2, 0), (@usuario, 4, 3, 0), (@usuario, 5, 1, 0), (@usuario, 5, 2, 0), (@usuario, 5, 3, 0), (@usuario, 11, 1, 0), (@usuario, 11, 2, 0), (@usuario, 11, 3, 0); ";
+            cmd.Parameters.AddWithValue("@usuario", user);
+            cmd.Connection = conexion;
+            cmd.ExecuteNonQuery();
+            conexion.Close();
+        }
+
+        public void insertarNotasSegundo(int user)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.CommandText = "insert into notas (Usuario, Asignatura, Trimestre, Nota) VALUES (@usuario, 6, 1, 0),(@usuario, 6, 2, 0),(@usuario, 7, 1, 0),(@usuario, 7, 2, 0),(@usuario, 8, 1, 0),(@usuario, 8, 2, 0),(@usuario, 9, 1, 0),(@usuario, 9, 2, 0),(@usuario, 10, 1, 0), (@usuario, 10, 2, 0),(@usuario, 12, 1, 0),(@usuario, 12, 2, 0),(@usuario, 13, 1, 0),(@usuario, 13, 2, 0);";
+            cmd.Parameters.AddWithValue("@usuario", user);
+            cmd.Connection = conexion;
+            cmd.ExecuteNonQuery();
+            conexion.Close();
+        }
+
+        public bool comprobarExistenciaNotas(int usuario, int curso)
+        {
+            bool salida = false;
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.CommandText = "Select Nota from notas where Usuario = @usuario and Asignatura in (Select Id from asignaturas where Curso = @curso) limit 1";
+            cmd.Parameters.AddWithValue("@usuario", usuario);
+            cmd.Parameters.AddWithValue("@curso", curso);
+            cmd.Connection = conexion;
+            MySqlDataReader reader = cmd.ExecuteReader();
+            if (reader.Read())
+            {
+                salida = true;
+            }
+            conexion.Close();
+            return salida;
+        }
+        public string hayNota(string trimestre, string asignatura, string usuario)
+        {
+            string salida = "no";
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.CommandText = "SELECT Nota FROM notas WHERE Trimestre = @trimestre AND Asignatura = (SELECT Id FROM asignaturas WHERE Nombre = @asignatura) AND Usuario = @usuario";
+            cmd.Parameters.AddWithValue("@trimestre", trimestre);
+            cmd.Parameters.AddWithValue("@asignatura", asignatura);
+            cmd.Parameters.AddWithValue("@usuario", usuario);
+            cmd.Connection = conexion;
+            MySqlDataReader Datos = cmd.ExecuteReader();
+            if (Datos.HasRows)
+            {
+                while (Datos.Read())
+                {
+                    int aux = (int)Datos.GetDecimal(0);
+                    if (aux > 0)
+                    {
+                        salida = "si";
+                    }
+                }
+            }
+            conexion.Close();
+            return salida;
+        }
+
+        public void agregarNota(string nota, string trimestre, string asignatura, string usuario)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.CommandText = "UPDATE notas SET Nota = @nota WHERE Trimestre = @trimestre AND Asignatura = (SELECT Id FROM asignaturas WHERE Nombre = @asignatura) AND Usuario = @usuario";
+            cmd.Parameters.AddWithValue("nota", nota);
+            cmd.Parameters.AddWithValue("@trimestre", trimestre);
+            cmd.Parameters.AddWithValue("@asignatura", asignatura);
+            cmd.Parameters.AddWithValue("@usuario", usuario);
+            cmd.Connection = conexion;
+            cmd.ExecuteNonQuery();
+            conexion.Close();
         }
     }
 }
