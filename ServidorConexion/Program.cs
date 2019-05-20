@@ -660,17 +660,6 @@ namespace ServidorConexion
                     ConsolaDebug.escribirEnConsola("INFO", "Nota cambiada");
                 }
 
-                else if(peticionActual.peticion.Equals("borrarNotas"))
-                {
-                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de borrado de notas por el usuario {0}", peticionActual.usuario);
-                    string curso = peticionActual.datos["curso"];
-                    int _curso = (curso.Equals("curso1") ? 1 : 2);
-                    int usuario = conexEnlaces.sacarUsuario(peticionActual.usuario);
-                    conexEnlaces.borrarNotas(usuario, _curso);
-                    enviarRespuesta(null, null, null, null, response);
-                    ConsolaDebug.escribirEnConsola("INFO", "Notas borradas");
-                }
-
             }
             catch (Exception e)
             {
