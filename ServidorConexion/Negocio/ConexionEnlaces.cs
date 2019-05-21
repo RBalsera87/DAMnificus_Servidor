@@ -31,12 +31,21 @@ namespace ServidorConexion.Negocio
         {
             conectar();
             MySqlCommand cmd = new MySqlCommand();
-            cmd.CommandText = "select e.Id,e.Link,e.Titulo,e.Descripcion,e.Valoracion,e.Imagen,e.Tipo,t.Nombre,e.Uploader,e.Activo from enlaces e JOIN temas t on e.Tema = t.id JOIN asignaturas a on t.Asignatura = a.Id where a.Nombre = @asignatura AND (e.activo = 1 OR e.activo = 2);";
-            cmd.Parameters.AddWithValue("@asignatura", asignatura);
-            if (usuario.ToUpper().Equals("ADMIN"))
+            if (asignatura.Equals("todas"))
             {
-                cmd.CommandText =  cmd.CommandText.Remove(cmd.CommandText.Length - 36);
-                cmd.CommandText += ";";
+                cmd.CommandText = "select e.Id,e.Link,e.Titulo,e.Descripcion,e.Valoracion,e.Imagen,e.Tipo,t.Nombre,e.Uploader,e.Activo,a.Nombre from enlaces e JOIN temas t on e.Tema = t.id JOIN asignaturas a on t.Asignatura = a.Id; ";
+
+            }else
+            {
+                if (usuario.ToUpper().Equals("ADMIN"))
+                {
+                    cmd.CommandText = "select e.Id,e.Link,e.Titulo,e.Descripcion,e.Valoracion,e.Imagen,e.Tipo,t.Nombre,e.Uploader,e.Activo,a.Nombre from enlaces e JOIN temas t on e.Tema = t.id JOIN asignaturas a on t.Asignatura = a.Id where a.Nombre = @asignatura;";
+                }else
+                {
+                    cmd.CommandText = "select e.Id,e.Link,e.Titulo,e.Descripcion,e.Valoracion,e.Imagen,e.Tipo,t.Nombre,e.Uploader,e.Activo,a.Nombre from enlaces e JOIN temas t on e.Tema = t.id JOIN asignaturas a on t.Asignatura = a.Id where a.Nombre = @asignatura AND (e.activo = 1 OR e.activo = 2);";
+
+                }
+                cmd.Parameters.AddWithValue("@asignatura", asignatura);               
             }
             cmd.Connection = conexion;
             MySqlDataReader Datos = cmd.ExecuteReader();
@@ -58,6 +67,7 @@ namespace ServidorConexion.Negocio
                     enlace.uploader = Datos.GetString(8);
                     enlace.activo = Datos.GetString(9);
                     enlace.reportarFallo = int.Parse(enlace.activo);
+                    enlace.asignatura = Datos.GetString(10);
                     listaEnlaces.Add(enlace);
 
                 }
