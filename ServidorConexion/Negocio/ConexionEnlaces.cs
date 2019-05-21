@@ -468,7 +468,7 @@ namespace ServidorConexion.Negocio
         {
             conectar();
             MySqlCommand cmd = new MySqlCommand();
-            cmd.CommandText = "insert into notas (Usuario, Asignatura, Trimestre, Nota) values (@usuario, 1, 1, 0), (@usuario 1, 2, 0), (@usuario, 1, 3, 0), (@usuario, 2, 1, 0), (@usuario, 2, 2, 0), (@usuario, 2, 3, 0), (@usuario, 3, 1, 0), (@usuario, 3, 2, 0), (@usuario, 3, 3, 0), (@usuario, 4, 1, 0), (@usuario, 4, 2, 0), (@usuario, 4, 3, 0), (@usuario, 5, 1, 0), (@usuario, 5, 2, 0), (@usuario, 5, 3, 0), (@usuario, 11, 1, 0), (@usuario, 11, 2, 0), (@usuario, 11, 3, 0); ";
+            cmd.CommandText = "INSERT INTO notas (Usuario, Asignatura, Trimestre, Nota) VALUES (@usuario, 1, 1, 0), (@usuario, 1, 2, 0), (@usuario, 1, 3, 0), (@usuario, 2, 1, 0), (@usuario, 2, 2, 0), (@usuario, 2, 3, 0), (@usuario, 3, 1, 0), (@usuario, 3, 2, 0), (@usuario, 3, 3, 0), (@usuario, 4, 1, 0), (@usuario, 4, 2, 0), (@usuario, 4, 3, 0), (@usuario, 5, 1, 0), (@usuario, 5, 2, 0), (@usuario, 5, 3, 0), (@usuario, 11, 1, 0), (@usuario, 11, 2, 0), (@usuario, 11, 3, 0);";
             cmd.Parameters.AddWithValue("@usuario", user);
             cmd.Connection = conexion;
             cmd.ExecuteNonQuery();
@@ -479,7 +479,7 @@ namespace ServidorConexion.Negocio
         {
             conectar();
             MySqlCommand cmd = new MySqlCommand();
-            cmd.CommandText = "insert into notas (Usuario, Asignatura, Trimestre, Nota) VALUES (@usuario, 6, 1, 0),(@usuario, 6, 2, 0),(@usuario, 7, 1, 0),(@usuario, 7, 2, 0),(@usuario, 8, 1, 0),(@usuario, 8, 2, 0),(@usuario, 9, 1, 0),(@usuario, 9, 2, 0),(@usuario, 10, 1, 0), (@usuario, 10, 2, 0),(@usuario, 12, 1, 0),(@usuario, 12, 2, 0),(@usuario, 13, 1, 0),(@usuario, 13, 2, 0);";
+            cmd.CommandText = "INSERT INTO notas (Usuario, Asignatura, Trimestre, Nota) VALUES (@usuario, 6, 1, 0),(@usuario, 6, 2, 0),(@usuario, 7, 1, 0),(@usuario, 7, 2, 0),(@usuario, 8, 1, 0),(@usuario, 8, 2, 0),(@usuario, 9, 1, 0),(@usuario, 9, 2, 0),(@usuario, 10, 1, 0), (@usuario, 10, 2, 0),(@usuario, 12, 1, 0),(@usuario, 12, 2, 0),(@usuario, 13, 1, 0),(@usuario, 13, 2, 0);";
             cmd.Parameters.AddWithValue("@usuario", user);
             cmd.Connection = conexion;
             cmd.ExecuteNonQuery();
