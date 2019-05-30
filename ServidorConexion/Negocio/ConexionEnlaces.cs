@@ -2,6 +2,7 @@
 using MySql.Data.MySqlClient;
 using ServidorConexion.Negocio;
 using EntidadesCompartidas;
+using System;
 
 namespace ServidorConexion.Negocio
 {
@@ -27,17 +28,24 @@ namespace ServidorConexion.Negocio
             }
         }
 
-        public List<Enlaces> obtenerColeccionEnlaces(string asignatura, string usuario)
+        public List<Enlaces> obtenerColeccionEnlaces(Dictionary<string, string> datos, string usuario)
         {
+            string asignatura = datos["asignatura"];
+            string credenciales = datos["credenciales"];
             conectar();
             MySqlCommand cmd = new MySqlCommand();
             if (asignatura.Equals("todas"))
             {
                 cmd.CommandText = "select e.Id,e.Link,e.Titulo,e.Descripcion,e.Valoracion,e.Imagen,e.Tipo,t.Nombre,e.Uploader,e.Activo,a.Nombre from enlaces e JOIN temas t on e.Tema = t.id JOIN asignaturas a on t.Asignatura = a.Id; ";
 
-            }else
+            }else if (asignatura.Equals("personal"))
             {
-                if (usuario.ToUpper().Equals("ADMIN"))
+                cmd.CommandText = "select e.Id,e.Link,e.Titulo,e.Descripcion,e.Valoracion,e.Imagen,e.Tipo,t.Nombre,e.Uploader,e.Activo,a.Nombre from enlaces e JOIN temas t on e.Tema = t.id JOIN asignaturas a on t.Asignatura = a.Id where e.Uploader = (SELECT id from usuarios where nombre = @usuario);";
+                cmd.Parameters.AddWithValue("@usuario", usuario);
+            }
+            else
+            {
+                if (credenciales.Equals("admin"))
                 {
                     cmd.CommandText = "select e.Id,e.Link,e.Titulo,e.Descripcion,e.Valoracion,e.Imagen,e.Tipo,t.Nombre,e.Uploader,e.Activo,a.Nombre from enlaces e JOIN temas t on e.Tema = t.id JOIN asignaturas a on t.Asignatura = a.Id where a.Nombre = @asignatura;";
                 }else
@@ -47,6 +55,45 @@ namespace ServidorConexion.Negocio
                 }
                 cmd.Parameters.AddWithValue("@asignatura", asignatura);               
             }
+            cmd.Connection = conexion;
+            MySqlDataReader Datos = cmd.ExecuteReader();
+            List<Enlaces> listaEnlaces = null;
+            if (Datos.HasRows)
+            {
+                listaEnlaces = new List<Enlaces>();
+                while (Datos.Read())
+                {   
+                    Enlaces enlace = new Enlaces();
+                    enlace.id = Datos.GetString(0);
+                    enlace.link = Datos.GetString(1);
+                    enlace.titulo = Datos.GetString(2);
+                    enlace.descripcion = Datos.GetString(3);
+                    enlace.valoracion = Datos.GetString(4);
+                    enlace.imagen = Datos.GetString(5);
+                    enlace.tipo = Datos.GetString(6);
+                    enlace.tema = Datos.GetString(7);
+                    enlace.uploader = Datos.GetString(8);
+                    enlace.activo = Datos.GetString(9);
+                    enlace.reportarFallo = int.Parse(enlace.activo);
+                    enlace.asignatura = Datos.GetString(10);
+                    listaEnlaces.Add(enlace);
+
+                }
+
+
+            }
+
+            conexion.Close();
+            return listaEnlaces;
+
+        }
+        public List<Enlaces> obtenerColeccionEnlacesDeUsuario(int usuario)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+           
+            cmd.CommandText = "select e.Id,e.Link,e.Titulo,e.Descripcion,e.Valoracion,e.Imagen,e.Tipo,t.Nombre,e.Uploader,e.Activo,a.Nombre from enlaces e JOIN temas t on e.Tema = t.id JOIN asignaturas a on t.Asignatura = a.Id where e.uploader = @usuario; ";           
+            cmd.Parameters.AddWithValue("@usuario", usuario);           
             cmd.Connection = conexion;
             MySqlDataReader Datos = cmd.ExecuteReader();
             List<Enlaces> listaEnlaces = null;
@@ -77,7 +124,6 @@ namespace ServidorConexion.Negocio
 
             conexion.Close();
             return listaEnlaces;
-
         }
 
         public List<string> obtenerNombreAsignaturas(string curso)
@@ -300,10 +346,10 @@ namespace ServidorConexion.Negocio
                 cmd.CommandText = "Select valoracion from enlaces WHERE id = @id";
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.Connection = conexion;
-                MySqlDataReader login = cmd.ExecuteReader();
-                if (login.Read())
+                MySqlDataReader reader = cmd.ExecuteReader();
+                if (reader.Read())
                 {
-                    int valoracion = int.Parse(login.GetString(0));
+                    int valoracion = int.Parse(reader.GetString(0));
                     if (operacion.Equals("sumar"))
                     {
                         if(valoracion == 100)
@@ -326,10 +372,8 @@ namespace ServidorConexion.Negocio
                             valoracion -= 1;
                         }
                     }
-                    
-                    
-                    conexion.Close();
 
+                    conexion.Close();
                     conectar();
                     cmd = new MySqlCommand();
                     string sql = "UPDATE enlaces SET valoracion = @val WHERE id = @id";
@@ -359,96 +403,225 @@ namespace ServidorConexion.Negocio
             }
             
         }
+        public bool cambiarUploaderRollback(List<Enlaces> listaUsuarios)
+        {
+            conectar();
+            foreach(Enlaces enlace in listaUsuarios)
+            { 
+                MySqlCommand cmd = new MySqlCommand();
+                string sql = "UPDATE enlaces SET Uploader = @uploader WHERE id = @id;";
+                cmd.Parameters.AddWithValue("@id", enlace.uploader);
+                cmd.Parameters.AddWithValue("@uploader", enlace.id);
+                cmd.CommandText = sql;
+                cmd.Connection = conexion;
+                if (cmd.ExecuteNonQuery() != 1)
+                {
+                    conexion.Close();
+                    return false;
+                }
+            }
 
+            return true;
+            
+        }
+        public bool borrarUsuario(int id, int newUploader)
+        {
+            conectar();
+            MySqlTransaction Transaccion;
+            Transaccion = conexion.BeginTransaction();
+            ConsolaDebug.escribirEnConsola("INFO", "Comenzando transacción de borrado en BD enlaces...");
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.Connection = conexion;
+            cmd.Transaction = Transaccion;
+            try
+            {
+                // Primer delete de la transacción
+                string sql = "UPDATE enlaces SET uploader = @newUploader WHERE uploader = @id";
+                cmd.Parameters.AddWithValue("@newUploader", newUploader);
+                cmd.Parameters.AddWithValue("@id", id);
+                cmd.CommandText = sql;
+                cmd.ExecuteNonQuery();
+                ConsolaDebug.escribirEnConsola("INFO", "Delete en usuarios ejecutado satisfactoriamente");
+                // Segundo insert de la transacción
+                sql = "DELETE FROM usuarios WHERE id = @id";
+                cmd.CommandText = sql;
+                cmd.ExecuteNonQuery();
+                Transaccion.Commit();
+                ConsolaDebug.escribirEnConsola("INFO", "delete en credenciales ejecutado satisfactoriamente");
+                return true;
+            }
+            catch (Exception e)
+            {
+                try
+                {
+                    ConsolaDebug.escribirEnConsola("WARNING", "Problema en transacción, comenzando ROLLBACK");
+                    Transaccion.Rollback();
+                    ConsolaDebug.escribirEnConsola("INFO", "ROLLBACK ejecutado satisfactoriamente");
+                }
+                catch (MySqlException ex)
+                {
+                    ConsolaDebug.escribirEnConsola("WARNING", "Problema en ROLLBACK");
+                    if (Transaccion.Connection != null)
+                    {
+                        ConsolaDebug.escribirEnConsola("ERROR", "Excepción lanzada: {0}", ex.Message);
+                    }
+                }
+                ConsolaDebug.escribirEnConsola("WARNING", "No se ha borrado nada en la BD");
+                ConsolaDebug.escribirEnConsola("ERROR", "Excepción lanzada: {0}", e.Message);
+                return false;
+            }
+            finally
+            {
+                conexion.Close();
+            }
+
+        }
+        public bool cambiarUploader(int uploader, int newUploader)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.CommandText = "SELECT Id FROM enlaces WHERE Uploader = @uploader";
+            cmd.Parameters.AddWithValue("@uploader", uploader);
+            cmd.Connection = conexion;
+            MySqlDataReader reader = cmd.ExecuteReader();
+            if (reader.Read())
+            {
+                conexion.Close();
+                conectar();
+                cmd = new MySqlCommand();
+                string sql = "UPDATE enlaces SET Uploader = @newUploader WHERE Uploader = @uploader;";
+                cmd.Parameters.AddWithValue("@newUploader", newUploader);
+                cmd.Parameters.AddWithValue("@uploader", uploader);               
+                cmd.CommandText = sql;
+                cmd.Connection = conexion;
+                if (cmd.ExecuteNonQuery() > 0)
+                {
+                    conexion.Close();
+                    return true;
+                }
+                else
+                {
+                    conexion.Close();
+                    return false;
+                }
+            }else
+            {
+                return true;
+            }
+        }
         public bool borrarEnlace(int id)
         {
             conectar();
             MySqlCommand cmd = new MySqlCommand();
-            string sql = "DELETE FROM enlaces WHERE id = @id";
+            cmd.CommandText = "SELECT Id FROM enlaces WHERE id = @id";
             cmd.Parameters.AddWithValue("@id", id);
-            cmd.CommandText = sql;
             cmd.Connection = conexion;
-            if (cmd.ExecuteNonQuery() == 1)
+            MySqlDataReader reader = cmd.ExecuteReader();
+            if (reader.Read())
             {
-                conexion.Close();
+                conectar();
+                cmd = new MySqlCommand();
+                string sql = "DELETE FROM enlaces WHERE id = @id";
+                cmd.Parameters.AddWithValue("@id", id);
+                cmd.CommandText = sql;
+                cmd.Connection = conexion;
+                if (cmd.ExecuteNonQuery() == 1)
+                {
+                    conexion.Close();
+                    return true;
+                }
+                else
+                {
+                    conexion.Close();
+                    return false;
+                }
+            }else
+            {
                 return true;
-            }
-            else
-            {
-                conexion.Close();
-                return false;
             }
         }
 
-        public string cambiarActivoRevisionDesactivo(int id,string usuario)
+        public Dictionary<string, int> cambiarActivoRevisionDesactivo(int id, string credenciales)
         {
-            if (id > 0)
-            {
+                Dictionary<string, int> datos = new Dictionary<string, int>();
                 conectar();
                 MySqlCommand cmd = new MySqlCommand();
-                cmd.CommandText = "Select valoracion from enlaces WHERE id = @id";
+                cmd.CommandText = "Select activo from enlaces WHERE id = @id";
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.Connection = conexion;
-                MySqlDataReader login = cmd.ExecuteReader();
-                if (login.Read())
+                MySqlDataReader reader = cmd.ExecuteReader();
+                if (reader.Read())
                 {
                     int estadoNuevo = 0;
-                    int estado = int.Parse(login.GetString(0));
-                    if(usuario == "admin")
+                    int estado = int.Parse(reader.GetString(0));
+                    if(credenciales == "admin")
                     {
-                        if(estado == 0)
+                        datos.Add("email", 0);
+                        if (estado == 0)
                         {
                             estadoNuevo = 1;
-                        }else if(estado == 1)
+                            datos.Add("estado", estadoNuevo);
+                        }
+                        else if(estado == 1)
                         {
                             estadoNuevo = 2;
+                            datos.Add("estado", estadoNuevo);
                         }
                         else
                         {
                             estadoNuevo = 0;
+                            datos.Add("estado", estadoNuevo);
                         }
-                    }else if(usuario != "invitado")
+                    }
+                    else 
                     {
-                        if(estado != 2)
+                        if (estado == 1)
                         {
                             estadoNuevo = 2;
+                            datos.Add("email", 1);
+                            datos.Add("estado", estadoNuevo);
                         }
                         else
                         {
-                            return "correcto";
+                            datos.Add("email", 0);
+                            datos.Add("estado", 2);
+                            conexion.Close();
+                            return datos;
                         }
                         
                     }
-
+                    conexion.Close();
                     conectar();
                     cmd = new MySqlCommand();
-                    string sql = "UPDATE enlaces SET Activo = @val WHERE id = @id";
-                    cmd.Parameters.AddWithValue("@val", estadoNuevo);
+                    string sql = "UPDATE enlaces SET Activo = @estadoNuevo WHERE id = @id";
+                    cmd.Parameters.AddWithValue("@estadoNuevo", estadoNuevo);
                     cmd.Parameters.AddWithValue("@id", id);
                     cmd.CommandText = sql;
                     cmd.Connection = conexion;
                     if (cmd.ExecuteNonQuery() == 1) // El campo se ha modificado
                     {
                         conexion.Close();
-                        return "correcto";
+                        return datos;
                     }
                     else
                     {
                         conexion.Close();
-                        return "incorrecto";
+                        datos.Clear();
+                        datos.Add("email", 0);
+                        datos.Add("estado", -1);
+                        return datos;
                     }
                  
                 }
                 else
                 {
                     conexion.Close();
-                    return "incorrecto";
+                    datos.Clear();
+                    datos.Add("email", 0);
+                    datos.Add("estado", -1);
+                    return datos;
                 }
-            }
-            else
-            {
-                return "incorrecto";
-            }
+            
             
         }
 

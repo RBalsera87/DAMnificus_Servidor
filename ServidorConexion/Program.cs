@@ -207,10 +207,8 @@ namespace ServidorConexion
                 // Petición para obtener los enlaces
                 else if (peticionActual.peticion.Equals("obtenerColeccionEnlaces"))
                 {
-                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de enlaces por el usuario {0}", peticionActual.usuario);
-                    string asignatura = peticionActual.datos["asignatura"];
-                    string usuario = peticionActual.usuario;
-                    List<Enlaces> coleccion = conexEnlaces.obtenerColeccionEnlaces(asignatura,usuario);
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de enlaces por el usuario {0}", peticionActual.usuario);                 
+                    List<Enlaces> coleccion = conexEnlaces.obtenerColeccionEnlaces(peticionActual.datos, peticionActual.usuario);
                     if(coleccion == null)
                     {
                         enviarRespuesta("coleccionEnviada", null, null, null, response);
@@ -238,17 +236,18 @@ namespace ServidorConexion
                     else
                     {
                         enviarRespuesta("incorrecto", null, null, null, response);
-                        ConsolaDebug.escribirEnConsola("INFO", "Borrado de enlace incorrecto");
+                        ConsolaDebug.escribirEnConsola("ERROR", "Borrado de enlace incorrecto");
                     }
 
                 }
                 // Petición para sumar votación a un enlace
                 else if (peticionActual.peticion.Equals("sumarYRestarValoracion"))
                 {
-                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de sumar valoracion por el usuario {0}", peticionActual.usuario);
-                    
                     int id = int.Parse(peticionActual.datos["id"]);
                     string operacion = peticionActual.datos["operacion"];
+
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de " + operacion + " valoración por el usuario {0}", peticionActual.usuario);
+                 
                     string actualizado = conexEnlaces.sumarYRestarValoracion(id,operacion);
                     if (actualizado.Equals("correcto"))
                     {
@@ -258,27 +257,65 @@ namespace ServidorConexion
                     else
                     {
                         enviarRespuesta(actualizado, null, null, null, response);
-                        ConsolaDebug.escribirEnConsola("INFO", "Actualizacion de valoración incorrecta");
+                        ConsolaDebug.escribirEnConsola("ERROR", "Actualizacion de valoración incorrecta");
                     }
                     
                 }
+                //Cambiar el rango de un usuario desde el area Administracion por un usuario "admin"
+                else if (peticionActual.peticion.Equals("cambiarRango"))
+                {
+                    int id = int.Parse(peticionActual.datos["id"]);
+                    string newRango = peticionActual.datos["newRango"];
+                    string nombre = peticionActual.datos["nombre"];
+                    string usuario = peticionActual.usuario;
+                    
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de cambiar Rango al usuario " + nombre + " por el usuario {0}", usuario);
+
+                    bool actualizado = conexUsuarios.cambiarRango(id, usuario, newRango);
+                    if (actualizado)
+                    {
+                        enviarRespuesta("correcto", null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Rango del usuario " + nombre + " actualizado correctamente a " + newRango + " por el usuario {0}", usuario);
+                    }
+                    else
+                    {
+                        enviarRespuesta("error", null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("ERROR", "Actualizacion de Rango incorrecta");
+                    }
+
+                }
+                //Cambia la columna Activo de la tabla Enlaces
                 else if (peticionActual.peticion.Equals("cambiarActivoRevisionDesactivo")){
                     ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de cambiar estado Activo/Desactivo/Revisión por el usuario {0}", peticionActual.usuario);
 
                     int id = int.Parse(peticionActual.datos["id"]);
-                    string user = peticionActual.usuario;
-                    string actualizado =conexEnlaces.cambiarActivoRevisionDesactivo(id, user);
-                    if (actualizado.Equals("correcto"))
+                    string credenciales = peticionActual.datos["credenciales"];
+                    var actualizado = conexEnlaces.cambiarActivoRevisionDesactivo(id, credenciales);
+                    if (actualizado["estado"] != -1)
                     {
-                        string email = "damnificusjovellanos@gmail.com";
-                        EnviarEmail.reporte(peticionActual.usuario, email, "Link caído","El link con id " + id + " ha sido reportado como caido. Revísenlo.");
-                        enviarRespuesta(actualizado, null, null, null, response);
-                        ConsolaDebug.escribirEnConsola("INFO", "Actualizacion enlace Activo/Desactivo/Revisión realizada correctamente");
+                        if (actualizado["email"] == 1)
+                        {
+                            string email = "damnificusjovellanos@gmail.com";
+                            EnviarEmail.reporte(peticionActual.usuario, email, "Link caído","El link con id " + id + " ha sido reportado como caido por el usuario " + peticionActual.usuario +". Revísenlo.");                        
+                        }
+
+                        string estado = "";
+                        if(actualizado["estado"] == 0)
+                        {
+                            estado = "Caido";
+                        }else if(actualizado["estado"] == 1)
+                        {
+                            estado = "Activo";
+                        }
+                        else { estado = "Revision"; }
+
+                        enviarRespuesta(actualizado["estado"].ToString(), null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("INFO", "Actualización de la columna Activo del enlace con id " + id + " a estado '" + estado + "' realizada correctamente");
                     }
                     else
                     {
-                        enviarRespuesta(actualizado, null, null, null, response);
-                        ConsolaDebug.escribirEnConsola("INFO", "Actualizacion enlace Activo/Desactivo/Revisión incorrecta");
+                        enviarRespuesta(actualizado["estado"].ToString(), null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("ERROR", "Actualización de la columna Activo del enlace con id '" + id + "' incorrecta");
                     }
                 }
 
@@ -299,6 +336,72 @@ namespace ServidorConexion
                     {
                         enviarRespuesta("error", null, null, null, response);
                     }
+                }
+                //Borrar usuario desde el area Administracion
+                else if (peticionActual.peticion.Equals("borrarUsuario"))
+                {
+                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida petición de borrar usuario por {0}", peticionActual.usuario);
+                    if (comprobarTokenValido(peticionActual, conexUsuarios, response))
+                    {
+                        string credenciales = peticionActual.datos["credenciales"];
+                        int idUserBorrar = int.Parse(peticionActual.datos["idBorrar"]);
+                        var permisos = conexUsuarios.comprobarPermisosBorrarUsuarios(idUserBorrar, credenciales, peticionActual.usuario);
+                        var listaEnlacesBorrar = conexEnlaces.obtenerColeccionEnlacesDeUsuario(idUserBorrar);
+
+                        if (permisos["rango"].Equals("true"))
+                        {
+
+                            string usuarioBorrar = permisos["usuarioBorrar"];
+
+                            if (conexEnlaces.borrarUsuario(idUserBorrar, 1))
+                            {
+                                bool borrado = conexUsuarios.borrarUsuario(idUserBorrar);
+                                if (borrado)
+                                {
+                                    ConsolaDebug.escribirEnConsola("INFO", "Usuario " + usuarioBorrar + " borrado correctamente de la BD de usuarios por el Usuario {0}", peticionActual.usuario);
+                                    enviarRespuesta("correcto", null, null, null, response);
+                                }
+                                else
+                                {
+                                    ConsolaDebug.escribirEnConsola("ERROR", "Error en el borrado en la BD de Usuarios, empezando rollback...");
+
+                                    if (listaEnlacesBorrar == null || listaEnlacesBorrar.Count == 0)
+                                    {
+                                        if (conexEnlaces.cambiarUploaderRollback(listaEnlacesBorrar))
+                                        {
+                                            ConsolaDebug.escribirEnConsola("INFO", "Uploader cambiado correctamente en la BD de Enlaces");
+                                        }
+                                        else
+                                        {
+                                            ConsolaDebug.escribirEnConsola("ERROR", "Error en Rollback al cambiar uploader en la tabla Enlaces");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        ConsolaDebug.escribirEnConsola("INFO", "Rollback cancelado. El usuario no tiene enlaces subidos por él");
+                                    }
+                                    enviarRespuesta("error", null, null, null, response);
+                                }
+                            }
+                            else
+                            {
+                                enviarRespuesta("error", null, null, null, response);
+                                ConsolaDebug.escribirEnConsola("ERROR", "Error al cambiar uploader en la tabla Enlaces");
+                            }
+
+                        }
+                        else if (permisos["rango"].Equals("false"))
+                        {
+                            enviarRespuesta("error", null, null, null, response);
+                            ConsolaDebug.escribirEnConsola("ERROR", permisos["mensaje"]);
+                        }
+                        else
+                        {
+                            ConsolaDebug.escribirEnConsola("INFO", permisos["mensaje"]);
+                            enviarRespuesta("correcto", null, null, null, response);
+                        }
+                    }
+                    
                 }
 
                 // Petición de confirmación de registro
@@ -364,7 +467,6 @@ namespace ServidorConexion
                 // Petición de cambiar clave
                 else if (peticionActual.peticion.Equals("cambiarPass"))
                 {
-                    
                     ConsolaDebug.escribirEnConsola("INFO+", "Recibida petición de cambiar contraseña por el usuario {0}", peticionActual.usuario);
                     // Consulta clave
                     claveEncriptada = conexUsuarios.obtenerPassHash(peticionActual);
@@ -392,6 +494,36 @@ namespace ServidorConexion
                         enviarRespuesta("passNoValida", null, null, null, response);
                     }
 
+                }
+                // Peticion por usuario admin de listado de todos los usuarios 
+                else if (peticionActual.peticion.Equals("obtenerColeccionUsuarios"))
+                {
+                    if (peticionActual.datos["credenciales"].Equals("admin")){
+                        if (comprobarTokenValido(peticionActual, conexUsuarios, response))
+                        {
+                            ConsolaDebug.escribirEnConsola("INFO+", "Recibida petición de obtener colección usuarios por el usuario {0}", peticionActual.usuario);
+                            string usuario = peticionActual.usuario;
+                            List<Usuario> coleccion = conexUsuarios.obtenerColeccionUsuarios(peticionActual.usuario);
+                            if (coleccion == null || coleccion.Count == 0)
+                            {
+                                enviarRespuesta("coleccionEnviada", null, null, null, response);
+                                ConsolaDebug.escribirEnConsola("INFO", "Colección usuarios vacia");
+                            }
+                            else
+                            {
+                                enviarRespuesta("coleccionEnviada", null, null, JArray.FromObject(coleccion), response);
+                                ConsolaDebug.escribirEnConsola("INFO", "Colección usuarios enviada al cliente satisfactoriamente");
+                            }
+                        }else
+                        {
+                            enviarRespuesta("coleccionEnviada", null, null, null, response);
+                            ConsolaDebug.escribirEnConsola("ERROR", "Petición de obtener colección usuarios por el usuario {0} rechazada por token invalido", peticionActual.usuario);
+                        }
+                    }else {
+                        enviarRespuesta("coleccionEnviada", null, null, null, response);
+                        ConsolaDebug.escribirEnConsola("ERROR", "Petición de obtener colección usuarios por el usuario {0} rechazada por no tener credenciales admin", peticionActual.usuario);
+                    }
+                    
                 }
 
                 // Petición para obtener el curso del usuario

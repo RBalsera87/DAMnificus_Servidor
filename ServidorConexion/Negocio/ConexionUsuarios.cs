@@ -161,6 +161,59 @@ namespace ServidorConexion
             }
 
         }
+
+        public bool borrarUsuario(int id)
+        {
+            conectar();
+            MySqlTransaction Transaccion;
+            Transaccion = conexion.BeginTransaction();
+            ConsolaDebug.escribirEnConsola("INFO", "Comenzando transacción de borrado en BD enlaces...");
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.Connection = conexion;
+            cmd.Transaction = Transaccion;
+            try
+            {
+                // Primer delete de la transacción
+                string sql = "DELETE FROM credenciales WHERE id = @id";
+                cmd.Parameters.AddWithValue("@id", id);
+                cmd.CommandText = sql;
+                cmd.ExecuteNonQuery();
+                ConsolaDebug.escribirEnConsola("INFO", "Delete en credenciales ejecutado satisfactoriamente");
+                // Segundo delete de la transacción
+                sql = "DELETE FROM usuarios WHERE id = @id";
+                cmd.CommandText = sql;
+                cmd.ExecuteNonQuery();
+                Transaccion.Commit();
+                ConsolaDebug.escribirEnConsola("INFO", "delete en usuarios ejecutado satisfactoriamente");
+                return true;
+            }
+            catch (Exception e)
+            {
+                try
+                {
+                    ConsolaDebug.escribirEnConsola("WARNING", "Problema en transacción, comenzando ROLLBACK");
+                    Transaccion.Rollback();
+                    ConsolaDebug.escribirEnConsola("INFO", "ROLLBACK ejecutado satisfactoriamente");
+                }
+                catch (MySqlException ex)
+                {
+                    ConsolaDebug.escribirEnConsola("WARNING", "Problema en ROLLBACK");
+                    if (Transaccion.Connection != null)
+                    {
+                        ConsolaDebug.escribirEnConsola("ERROR", "Excepción lanzada: {0}", ex.Message);
+                    }
+                }
+                ConsolaDebug.escribirEnConsola("WARNING", "No se ha insertado nada en la BD");
+                ConsolaDebug.escribirEnConsola("ERROR", "Excepción lanzada: {0}", e.Message);
+                return false;
+            }
+            finally
+            {
+                conexion.Close();
+            }
+
+        }
+
         public bool borrarUsuarioDeBBDD(string usuario)
         {
             conectar();
@@ -250,6 +303,147 @@ namespace ServidorConexion
                 conexion.Close();
                 return "null";
             }
+        }
+
+        public List<Usuario> obtenerColeccionUsuarios(string user)
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            
+            cmd.CommandText = "SELECT u.id, u.usuario, u.email, u.nombre, u.apellidos, c.rango FROM usuarios u inner join credenciales c on u.id = c.Id where u.usuario <> @user; ";
+            cmd.Parameters.AddWithValue("@user", user);
+            cmd.Connection = conexion;
+            MySqlDataReader Datos = cmd.ExecuteReader();
+            List<Usuario> listaUsuarios = null;
+            if (Datos.HasRows)
+            {
+                listaUsuarios = new List<Usuario>();
+                while (Datos.Read())
+                {   
+                    Usuario usuario = new Usuario();
+                    usuario.Id= Datos.GetString(0);
+                    usuario.User = Datos.GetString(1);
+                    usuario.Email = Datos.GetString(2);
+                    usuario.Nombre = Datos.GetString(3);
+                    usuario.Apellidos = Datos.GetString(4);
+                    usuario.Credenciales = Datos.GetString(5);
+                    if (!usuario.User.Equals("admin")){
+                        listaUsuarios.Add(usuario);
+                    }
+                }
+            }
+
+            conexion.Close();
+            return listaUsuarios;
+
+        }
+
+        public Dictionary<string,string> comprobarPermisosBorrarUsuarios(int idUserBorrar,string credenciales, string user)
+        {
+            string usuarioBorrar = "";
+            string credencialesBorrar = "";
+            Dictionary<string, string> permisos = new Dictionary<string, string>();
+            string mensaje = "";
+            string rango = "";
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+
+            cmd.CommandText = "SELECT u.usuario, c.rango FROM usuarios u join credenciales c on u.id = c.Id WHERE u.id = @id";
+            cmd.Parameters.AddWithValue("@id", idUserBorrar);
+            cmd.Connection = conexion;
+            MySqlDataReader DatosBD = cmd.ExecuteReader();
+            if (DatosBD.Read())
+            {
+                usuarioBorrar = DatosBD.GetString(0);
+                credencialesBorrar = DatosBD.GetString(1);
+                if (!usuarioBorrar.Equals("admin"))//No llegaría nunca al servidor la petición de borrar al usuario admin pero valido por seguridad
+                {
+                    if (credenciales.Equals("admin"))
+                    {
+                        if (user.Equals("admin"))
+                        {
+                            rango = "true";
+                        }
+                        else if (!credencialesBorrar.Equals("admin"))
+                        {
+                            rango = "true";
+                        }
+                        else
+                        {
+                            rango = "false";
+                            mensaje = "Un usuario distinto a admin esta intentando borrar a un usuario con privilegios admin";
+                        }
+                    }
+                    else
+                    {
+                        mensaje = "Usuario sin credenciales necesarias esta intentando borrar usuarios";
+                    }
+                }
+                else
+                {
+                    mensaje = "Se esta intentando borrar al usuario Administrador de la BBDD";
+                }
+            }
+            else
+            {
+                mensaje = "No existe el usuario en la BD";
+            }
+            conexion.Close();
+
+            permisos.Add("rango", rango);
+            permisos.Add("mensaje", mensaje);
+            permisos.Add("usuarioBorrar", usuarioBorrar);
+            return permisos;
+        }
+
+        public bool cambiarRango(int id, string usuario, string newRango)
+        {
+            conectar();
+            //Comprobamos que existe el usuario en la BD ya que puede haber sido borrar a la vez por otro admin
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.CommandText = "Select rango from credenciales WHERE id = @id";
+            cmd.Parameters.AddWithValue("@id", id);
+            cmd.Connection = conexion;
+            MySqlDataReader reader = cmd.ExecuteReader();
+            if (reader.Read())
+            {
+                string rango = reader.GetString(0);
+                if (rango.Equals(newRango))
+                {
+                    return true;
+                }
+                if (rango.Equals("admin") && !usuario.Equals("admin"))
+                {
+                    conexion.Close();
+                    return false;
+                }                
+                conexion.Close();
+                conectar();
+                cmd = new MySqlCommand();
+                string sql = "UPDATE credenciales SET rango = @newRango WHERE id = @id";
+                cmd.Parameters.AddWithValue("@newRango", newRango);
+                cmd.Parameters.AddWithValue("@id", id);
+                cmd.CommandText = sql;
+                cmd.Connection = conexion;
+                if (cmd.ExecuteNonQuery() == 1) // El campo se ha modificado
+                {
+                    conexion.Close();
+                    return true;
+                }
+                else
+                {
+                    conexion.Close();
+                    return false;
+                }
+
+            }
+            else
+            {
+                conexion.Close();
+                return false;
+            }
+
+
         }
 
     }
