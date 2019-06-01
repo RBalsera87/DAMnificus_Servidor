@@ -40,7 +40,7 @@ namespace ServidorConexion.Negocio
 
             }else if (asignatura.Equals("personal"))
             {
-                cmd.CommandText = "select e.Id,e.Link,e.Titulo,e.Descripcion,e.Valoracion,e.Imagen,e.Tipo,t.Nombre,e.Uploader,e.Activo,a.Nombre from enlaces e JOIN temas t on e.Tema = t.id JOIN asignaturas a on t.Asignatura = a.Id where e.Uploader = (SELECT id from usuarios where nombre = @usuario);";
+                cmd.CommandText = "select e.Id,e.Link,e.Titulo,e.Descripcion,e.Valoracion,e.Imagen,e.Tipo,t.Nombre,e.Uploader,e.Activo,a.Nombre from enlaces e JOIN temas t on e.Tema = t.id JOIN asignaturas a on t.Asignatura = a.Id where e.Uploader = (SELECT id from usuarios where nombre = @usuario) AND (e.activo <> 0);";
                 cmd.Parameters.AddWithValue("@usuario", usuario);
             }
             else
@@ -435,19 +435,19 @@ namespace ServidorConexion.Negocio
             cmd.Transaction = Transaccion;
             try
             {
-                // Primer delete de la transacción
+                // Primer update de la transacción
                 string sql = "UPDATE enlaces SET uploader = @newUploader WHERE uploader = @id";
                 cmd.Parameters.AddWithValue("@newUploader", newUploader);
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.CommandText = sql;
                 cmd.ExecuteNonQuery();
-                ConsolaDebug.escribirEnConsola("INFO", "Delete en usuarios ejecutado satisfactoriamente");
-                // Segundo insert de la transacción
+                ConsolaDebug.escribirEnConsola("INFO", "Update en BD ENLACES tabla enlaces se ha cambiado el uploader al usuario admin satisfactoriamente");
+                // Segundo delete de la transacción
                 sql = "DELETE FROM usuarios WHERE id = @id";
                 cmd.CommandText = sql;
                 cmd.ExecuteNonQuery();
                 Transaccion.Commit();
-                ConsolaDebug.escribirEnConsola("INFO", "delete en credenciales ejecutado satisfactoriamente");
+                ConsolaDebug.escribirEnConsola("INFO", "Delete en BD ENLACES tabla ususarios ejecutado satisfactoriamente");
                 return true;
             }
             catch (Exception e)

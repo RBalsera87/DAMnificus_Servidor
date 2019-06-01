@@ -167,7 +167,7 @@ namespace ServidorConexion
             conectar();
             MySqlTransaction Transaccion;
             Transaccion = conexion.BeginTransaction();
-            ConsolaDebug.escribirEnConsola("INFO", "Comenzando transacción de borrado en BD enlaces...");
+            ConsolaDebug.escribirEnConsola("INFO", "Comenzando transacción de borrado en BD usuarios...");
             MySqlCommand cmd = new MySqlCommand();
             cmd.Connection = conexion;
             cmd.Transaction = Transaccion;
@@ -178,13 +178,13 @@ namespace ServidorConexion
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.CommandText = sql;
                 cmd.ExecuteNonQuery();
-                ConsolaDebug.escribirEnConsola("INFO", "Delete en credenciales ejecutado satisfactoriamente");
+                ConsolaDebug.escribirEnConsola("INFO", "Delete en BD USUARIOS tabla credenciales ejecutado satisfactoriamente");
                 // Segundo delete de la transacción
                 sql = "DELETE FROM usuarios WHERE id = @id";
                 cmd.CommandText = sql;
                 cmd.ExecuteNonQuery();
                 Transaccion.Commit();
-                ConsolaDebug.escribirEnConsola("INFO", "delete en usuarios ejecutado satisfactoriamente");
+                ConsolaDebug.escribirEnConsola("INFO", "Delete en BD USUARIOS tabla usuarios ejecutado satisfactoriamente");
                 return true;
             }
             catch (Exception e)
