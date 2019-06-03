@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using ServidorConexion.Metodos;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -21,9 +22,11 @@ namespace ServidorConexion
             try
             {
                 ConsolaDebug.escribirEnConsola("INFO", "Servidor iniciado");
+                string ip = ConfigurationManager.AppSettings["serverIp"];
+                string urlServidor = "http://" + ip + ":8080/damnificus/";
                 httpListener = new HttpListener
                 {
-                    Prefixes = { "http://localhost:8080/damnificus/" },
+                    Prefixes = { urlServidor },
                 };
 
                 httpListener.Start();
