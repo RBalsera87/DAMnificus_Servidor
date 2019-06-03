@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ServidorConexion.Negocio
+namespace ServidorConexion.Metodos
 {
     class ConsolaDebug
     {
@@ -44,7 +44,7 @@ namespace ServidorConexion.Negocio
 
             Console.WriteLine("░░░░░░░░░░░░░░░░░░░▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓██████████▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒░░░░░░░░░░░░░░░░░░░");
             Console.ForegroundColor = ConsoleColor.DarkGreen;
-            Console.WriteLine("Version 0.8 - Abril 2019");
+            Console.WriteLine("Version 1.0 - Junio 2019");
             Console.ForegroundColor = ConsoleColor.Gray;
         }
     }

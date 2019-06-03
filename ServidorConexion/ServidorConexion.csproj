@@ -32,6 +32,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>iconodamserver.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="EntidadesCompartidas, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -53,17 +56,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Negocio\ConexionEnlaces.cs" />
-    <Compile Include="Negocio\ConexionUsuarios.cs" />
-    <Compile Include="Negocio\ConsolaDebug.cs" />
-    <Compile Include="Negocio\EnviarEmail.cs" />
-    <Compile Include="Negocio\GeneradorTokens.cs" />
+    <Compile Include="Metodos\ConexionEnlaces.cs" />
+    <Compile Include="Metodos\ConexionUsuarios.cs" />
+    <Compile Include="Metodos\ConsolaDebug.cs" />
+    <Compile Include="Metodos\EnviarEmail.cs" />
+    <Compile Include="Metodos\GeneradorTokens.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="iconodamserver.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

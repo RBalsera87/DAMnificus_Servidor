@@ -1,7 +1,7 @@
 ﻿using EntidadesCompartidas;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using ServidorConexion.Negocio;
+using ServidorConexion.Metodos;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -47,16 +47,16 @@ namespace ServidorConexion
                     {
                         ConsolaDebug.escribirEnConsola("WARNING", "Recibida peticion vacía");
                     }
-                    //ConsolaDebug.escribirEnConsola("DEBUG", "Start of client JSON data:");                   
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Start of client JSON data:");
                     string datosJson = reader.ReadToEnd(); // Convierte los datos en una cadena.
-                    //ConsolaDebug.escribirEnConsola("DEBUG",datosJson);
-                    //ConsolaDebug.escribirEnConsola("DEBUG", "End of client data:");
-                    //ConsolaDebug.escribirEnConsola("DEBUG", "Parseando la petición Json...");
+                    ConsolaDebug.escribirEnConsola("DEBUG", datosJson);
+                    ConsolaDebug.escribirEnConsola("DEBUG", "End of client data:");
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Parseando la petición Json...");
                     var objetoJSON = JObject.Parse(datosJson);
-                    //ConsolaDebug.escribirEnConsola("DEBUG", "Peticion: {0}", (string)objetoJSON["peticion"]);
-                    //ConsolaDebug.escribirEnConsola("DEBUG", "Usuario: {0}", (string)objetoJSON["usuario"]);
-                    //ConsolaDebug.escribirEnConsola("DEBUG", "Contraseña: {0}", (string)objetoJSON["clave"]);
-                    //ConsolaDebug.escribirEnConsola("DEBUG", "Token: {0}", (string)objetoJSON["token"]);                   
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Peticion: {0}", (string)objetoJSON["peticion"]);
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Usuario: {0}", (string)objetoJSON["usuario"]);
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Contraseña: {0}", (string)objetoJSON["clave"]);
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Token: {0}", (string)objetoJSON["token"]);
 
                     // Serializa el objeto JSON en un objeto .NET
                     Peticion peticionActual = objetoJSON.ToObject<Peticion>();
@@ -83,6 +83,9 @@ namespace ServidorConexion
                 httpListener.Close();
             }
         }
+       /*****************************************
+        * Tratamiento de peticiones del cliente *
+        *****************************************/
         public static void procesarPeticion(Peticion peticionActual, HttpListenerResponse response)
         {
             string nombreHilo = "";
@@ -104,16 +107,13 @@ namespace ServidorConexion
                 Thread.CurrentThread.Name = nombreHilo;
                 ConsolaDebug.escribirEnConsola("DEBUG", "Hilo creado con nombre: {0}", nombreHilo);
 
-                //ConsolaDebug.escribirEnConsola("DEBUG", "Usuario descifrado: {0}", peticionActual.usuario);
-                //ConsolaDebug.escribirEnConsola("DEBUG", "Contraseña descifrada: " + peticionActual.clave);
-                //ConsolaDebug.escribirEnConsola("DEBUG", "Token descifrado: " + peticionActual.token);
+                ConsolaDebug.escribirEnConsola("DEBUG", "Usuario descifrado: {0}", peticionActual.usuario);
+                ConsolaDebug.escribirEnConsola("DEBUG", "Contraseña descifrada: " + peticionActual.clave);
+                ConsolaDebug.escribirEnConsola("DEBUG", "Token descifrado: " + peticionActual.token);
 
                 ConexionUsuarios conexUsuarios = new ConexionUsuarios();
                 ConexionEnlaces conexEnlaces = new ConexionEnlaces();
 
-                /*****************************************
-                 * Tratamiento de peticiones del cliente *
-                 *****************************************/
                 string claveEncriptada;
 
                 // Petición de STATUS por parte de cliente
