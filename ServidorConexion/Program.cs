@@ -239,20 +239,21 @@ namespace ServidorConexion
                 else if (peticionActual.peticion.Equals("borrarEnlace"))
                 {
                     ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de eliminar enlace por el usuario {0}", peticionActual.usuario);
-
-                    int id = int.Parse(peticionActual.datos["id"]);
-                    var actualizado = conexEnlaces.borrarEnlace(id);
-                    if (actualizado)
+                    if (comprobarTokenValido(peticionActual, conexUsuarios, response))
                     {
-                        enviarRespuesta("correcto", null, null, null, response);
-                        ConsolaDebug.escribirEnConsola("INFO", "Enlace borrado correctamente");
+                        int id = int.Parse(peticionActual.datos["id"]);
+                        var actualizado = conexEnlaces.borrarEnlace(id);
+                        if (actualizado)
+                        {
+                            enviarRespuesta("correcto", null, null, null, response);
+                            ConsolaDebug.escribirEnConsola("INFO", "Enlace borrado correctamente");
+                        }
+                        else
+                        {
+                            enviarRespuesta("incorrecto", null, null, null, response);
+                            ConsolaDebug.escribirEnConsola("ERROR", "Borrado de enlace incorrecto");
+                        }
                     }
-                    else
-                    {
-                        enviarRespuesta("incorrecto", null, null, null, response);
-                        ConsolaDebug.escribirEnConsola("ERROR", "Borrado de enlace incorrecto");
-                    }
-
                 }
                 // Petición para sumar votación a un enlace
                 else if (peticionActual.peticion.Equals("sumarYRestarValoracion"))
@@ -278,25 +279,27 @@ namespace ServidorConexion
                 //Cambiar el rango de un usuario desde el area Administracion por un usuario "admin"
                 else if (peticionActual.peticion.Equals("cambiarRango"))
                 {
-                    int id = int.Parse(peticionActual.datos["id"]);
-                    string newRango = peticionActual.datos["newRango"];
-                    string nombre = peticionActual.datos["nombre"];
-                    string usuario = peticionActual.usuario;
-                    
-                    ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de cambiar Rango al usuario " + nombre + " por el usuario {0}", usuario);
-
-                    bool actualizado = conexUsuarios.cambiarRango(id, usuario, newRango);
-                    if (actualizado)
+                    if (comprobarTokenValido(peticionActual, conexUsuarios, response))
                     {
-                        enviarRespuesta("correcto", null, null, null, response);
-                        ConsolaDebug.escribirEnConsola("INFO", "Rango del usuario " + nombre + " actualizado correctamente a " + newRango + " por el usuario {0}", usuario);
-                    }
-                    else
-                    {
-                        enviarRespuesta("error", null, null, null, response);
-                        ConsolaDebug.escribirEnConsola("ERROR", "Actualizacion de Rango incorrecta");
-                    }
+                        int id = int.Parse(peticionActual.datos["id"]);
+                        string newRango = peticionActual.datos["newRango"];
+                        string nombre = peticionActual.datos["nombre"];
+                        string usuario = peticionActual.usuario;
 
+                        ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de cambiar Rango al usuario " + nombre + " por el usuario {0}", usuario);
+
+                        bool actualizado = conexUsuarios.cambiarRango(id, usuario, newRango);
+                        if (actualizado)
+                        {
+                            enviarRespuesta("correcto", null, null, null, response);
+                            ConsolaDebug.escribirEnConsola("INFO", "Rango del usuario " + nombre + " actualizado correctamente a " + newRango + " por el usuario {0}", usuario);
+                        }
+                        else
+                        {
+                            enviarRespuesta("error", null, null, null, response);
+                            ConsolaDebug.escribirEnConsola("ERROR", "Actualizacion de Rango incorrecta");
+                        }
+                    }
                 }
                 //Cambia la columna Activo de la tabla Enlaces
                 else if (peticionActual.peticion.Equals("cambiarActivoRevisionDesactivo")){
