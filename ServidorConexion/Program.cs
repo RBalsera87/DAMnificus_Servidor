@@ -156,18 +156,26 @@ namespace ServidorConexion
                     bool claveValida = Clave.validarClave(peticionActual.clave, claveEncriptada);
                     if (claveValida)
                     {
-                        ConsolaDebug.escribirEnConsola("INFO", "La contraseña es valida, generando token...");
-                        string token = GeneradorTokens.GenerarToken(64);
-                        if (conexUsuarios.actualizarTokenEnBBDD(token, peticionActual.usuario))
+                        string tokenBD = conexUsuarios.obtenerToken(peticionActual.usuario);
+                        if (tokenBD.Length >= 64)
                         {
-                            ConsolaDebug.escribirEnConsola("INFO", "Token generado y guardado en BD existósamente");
+                            enviarRespuesta("usuarioYaConectado", null, null, null, response);
                         }
                         else
                         {
-                            ConsolaDebug.escribirEnConsola("WARNING", "¡ATENCIóN! Error al guardar token en BD");
-                        }
-                        ConsolaDebug.escribirEnConsola("INFO", "Enviando token al cliente");
-                        enviarRespuesta("passValida", token, null, null, response);
+                            ConsolaDebug.escribirEnConsola("INFO", "La contraseña es valida, generando token...");
+                            string token = GeneradorTokens.GenerarToken(64);
+                            if (conexUsuarios.actualizarTokenEnBBDD(token, peticionActual.usuario))
+                            {
+                                ConsolaDebug.escribirEnConsola("INFO", "Token generado y guardado en BD existósamente");
+                            }
+                            else
+                            {
+                                ConsolaDebug.escribirEnConsola("WARNING", "¡ATENCIóN! Error al guardar token en BD");
+                            }
+                            ConsolaDebug.escribirEnConsola("INFO", "Enviando token al cliente");
+                            enviarRespuesta("passValida", token, null, null, response);
+                        }                       
                     }
                     else
                     {
