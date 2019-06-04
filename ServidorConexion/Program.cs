@@ -160,6 +160,7 @@ namespace ServidorConexion
                         if (tokenBD.Length >= 64)
                         {
                             enviarRespuesta("usuarioYaConectado", null, null, null, response);
+                            ConsolaDebug.escribirEnConsola("WARNING", "El usuario {0} se está intentando conectar por segunda vez", peticionActual.usuario);
                         }
                         else
                         {
