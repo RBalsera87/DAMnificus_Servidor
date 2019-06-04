@@ -458,6 +458,28 @@ namespace ServidorConexion.Metodos
 
 
         }
+        public bool borrarTokenTodos()
+        {
+            lock (bloqueo)
+            {
+                conectar();
+                MySqlCommand cmd = new MySqlCommand();
+                // La palabra BINARY sirve para hacer distinción de mayúsculas y minúsculas
+                string sql = "UPDATE credenciales SET Token = ''";
+                cmd.CommandText = sql;
+                cmd.Connection = conexion;
+                if (cmd.ExecuteNonQuery() == 1) // El token se ha guardado
+                {
+                    conexion.Close();
+                    return true;
+                }
+                else
+                {
+                    conexion.Close();
+                    return false;
+                }
+            }
+        }
 
     }
 }

@@ -23,7 +23,7 @@ namespace ServidorConexion
             {
                 try
                 {
-                    ConsolaDebug.escribirEnConsola("DEBUG", "Servidor iniciado");
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Modo debug activado");
                     ConsolaDebug.escribirEnConsola("INFO", "Servidor iniciado");
                     string ip = ConfigurationManager.AppSettings["serverIp"];
                     string urlServidor = "http://" + ip + ":8080/damnificus/";
@@ -85,6 +85,10 @@ namespace ServidorConexion
                 {
                     // Stop listening for new clients.
                     httpListener.Close();
+                    Peticion borrado = new Peticion();
+                    borrado.peticion = "borrarTokenTodos";
+                    procesarPeticion(borrado, null);
+                    ConsolaDebug.escribirEnConsola("INFO+", "Reiniciando el servidor en 3 segundos...");
                     Thread.Sleep(3000);
                 } 
             }
@@ -529,11 +533,13 @@ namespace ServidorConexion
                                 enviarRespuesta("coleccionEnviada", null, null, JArray.FromObject(coleccion), response);
                                 ConsolaDebug.escribirEnConsola("INFO", "Colección usuarios enviada al cliente satisfactoriamente");
                             }
-                        }else
+                        }
+                        else
                         {
                             enviarRespuesta("coleccionEnviada", null, null, null, response);
                             ConsolaDebug.escribirEnConsola("ERROR", "Petición de obtener colección usuarios por el usuario {0} rechazada por token invalido", peticionActual.usuario);
-                        }
+                        } //QUITAR ESTO!!!!!!!!
+
                     }else {
                         enviarRespuesta("coleccionEnviada", null, null, null, response);
                         ConsolaDebug.escribirEnConsola("ERROR", "Petición de obtener colección usuarios por el usuario {0} rechazada por no tener credenciales admin", peticionActual.usuario);
@@ -805,6 +811,18 @@ namespace ServidorConexion
                     conexEnlaces.agregarNota(nota, trimestre, asignatura, usuario);
                     enviarRespuesta(null, null, null, null, response);
                     ConsolaDebug.escribirEnConsola("INFO", "Nota cambiada");
+                }
+                // Petición para cambiar la nota al usuario
+                else if (peticionActual.peticion.Equals("borrarTokenTodos"))
+                {
+                    ConsolaDebug.escribirEnConsola("INFO", "Error en el servidor, intentando limpiar los tokens...");
+                    if (conexUsuarios.borrarTokenTodos())
+                    {
+                        ConsolaDebug.escribirEnConsola("INFO+", "Limpieza de todos los token efectuada");
+                    }else
+                    {
+                        ConsolaDebug.escribirEnConsola("WARNING", "No se han podido limpiar los tokens de los usuarios");
+                    }
                 }
 
             }
