@@ -26,8 +26,8 @@ namespace ServidorConexion.Metodos
         }
         private static bool enviarEmail(string email, string asunto, string cuerpo)
         {
-            var fromAddress = new MailAddress("damnificusjovellanos@gmail.com", "DAMnificus Contacto"); // Cambiar esto
-            const string fromPassword = "prodam$19"; // Cambiar esto
+            var fromAddress = new MailAddress("damnificusjovellanos@gmail.com", "DAMnificus Contacto"); 
+            const string fromPassword = "prodam$19";
             var toAddress = new MailAddress(email);
             var smtp = new SmtpClient
             {

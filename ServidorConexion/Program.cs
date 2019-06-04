@@ -21,6 +21,7 @@ namespace ServidorConexion
             HttpListener httpListener = null;
             try
             {
+                ConsolaDebug.escribirEnConsola("DEBUG", "Servidor iniciado");
                 ConsolaDebug.escribirEnConsola("INFO", "Servidor iniciado");
                 string ip = ConfigurationManager.AppSettings["serverIp"];
                 string urlServidor = "http://" + ip + ":8080/damnificus/";

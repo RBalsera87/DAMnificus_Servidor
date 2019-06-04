@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Configuration;
 
 namespace ServidorConexion.Metodos
 {
     class ConsolaDebug
     {
-        private static bool debugActivado = true; // Activa o desactiva los mensajes de depuración en la consola
+        private static bool debugActivado = false;
         public static void escribirEnConsola(string tipo, string texto)
         {
             string hora = DateTime.Now.ToString("[HH:mm:ss]");
@@ -33,6 +34,8 @@ namespace ServidorConexion.Metodos
         }
         public static void cargarConsola()
         {
+            string debugConfig = ConfigurationManager.AppSettings["debugConsole"];
+            debugActivado = Convert.ToBoolean(debugConfig); // Activa o desactiva los mensajes de depuración en la consola
             Console.SetWindowSize(120, 35);
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine(" _____   _______  _______         __   ___  __                       _______\n" +
