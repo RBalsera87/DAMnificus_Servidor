@@ -99,32 +99,35 @@ namespace ServidorConexion
         public static void procesarPeticion(Peticion peticionActual, HttpListenerResponse response)
         {
             string nombreHilo = "";
+            string claveEncriptada;
+            ConexionUsuarios conexUsuarios;
+            ConexionEnlaces conexEnlaces;
             try
             {
-                if (peticionActual.clave != null)
+                conexUsuarios = new ConexionUsuarios();
+                conexEnlaces = new ConexionEnlaces();
+                if (peticionActual.peticion != "borrarTokenTodos")
                 {
-                    peticionActual.clave = CifradoJson.Descifrado(peticionActual.clave, peticionActual.peticion);
-                }
-                if (peticionActual.token != null)
-                {
-                    peticionActual.token = CifradoJson.Descifrado(peticionActual.token, peticionActual.peticion);
-                }
-                if (peticionActual.usuario != null)
-                {
-                    peticionActual.usuario = CifradoJson.Descifrado(peticionActual.usuario, peticionActual.peticion);
-                }
-                nombreHilo = peticionActual.peticion + "-" + peticionActual.usuario;
-                Thread.CurrentThread.Name = nombreHilo;
-                ConsolaDebug.escribirEnConsola("DEBUG", "Hilo creado con nombre: {0}", nombreHilo);
+                    if (peticionActual.clave != null)
+                    {
+                        peticionActual.clave = CifradoJson.Descifrado(peticionActual.clave, peticionActual.peticion);
+                    }
+                    if (peticionActual.token != null)
+                    {
+                        peticionActual.token = CifradoJson.Descifrado(peticionActual.token, peticionActual.peticion);
+                    }
+                    if (peticionActual.usuario != null)
+                    {
+                        peticionActual.usuario = CifradoJson.Descifrado(peticionActual.usuario, peticionActual.peticion);
+                    }
+                    nombreHilo = peticionActual.peticion + "-" + peticionActual.usuario;
+                    Thread.CurrentThread.Name = nombreHilo;
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Hilo creado con nombre: {0}", nombreHilo);
 
-                ConsolaDebug.escribirEnConsola("DEBUG", "Usuario descifrado: {0}", peticionActual.usuario);
-                ConsolaDebug.escribirEnConsola("DEBUG", "Contraseña descifrada: " + peticionActual.clave);
-                ConsolaDebug.escribirEnConsola("DEBUG", "Token descifrado: " + peticionActual.token);
-
-                ConexionUsuarios conexUsuarios = new ConexionUsuarios();
-                ConexionEnlaces conexEnlaces = new ConexionEnlaces();
-
-                string claveEncriptada;
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Usuario descifrado: {0}", peticionActual.usuario);
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Contraseña descifrada: " + peticionActual.clave);
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Token descifrado: " + peticionActual.token);
+                }
 
                 // Petición de STATUS por parte de cliente
                 if (peticionActual.peticion.Equals("status"))
@@ -534,12 +537,6 @@ namespace ServidorConexion
                                 ConsolaDebug.escribirEnConsola("INFO", "Colección usuarios enviada al cliente satisfactoriamente");
                             }
                         }
-                        else
-                        {
-                            enviarRespuesta("coleccionEnviada", null, null, null, response);
-                            ConsolaDebug.escribirEnConsola("ERROR", "Petición de obtener colección usuarios por el usuario {0} rechazada por token invalido", peticionActual.usuario);
-                        } //QUITAR ESTO!!!!!!!!
-
                     }else {
                         enviarRespuesta("coleccionEnviada", null, null, null, response);
                         ConsolaDebug.escribirEnConsola("ERROR", "Petición de obtener colección usuarios por el usuario {0} rechazada por no tener credenciales admin", peticionActual.usuario);
@@ -884,6 +881,10 @@ namespace ServidorConexion
             catch (System.Net.HttpListenerException)
             {
                 ConsolaDebug.escribirEnConsola("WARNING", "Cliente desconectado, imposible enviar respuesta");
+            }
+            catch (Exception e)
+            {
+                ConsolaDebug.escribirEnConsola("ERROR", "Excepción en envío de respuesta:\n{0}", e.StackTrace);
             }
         }
         public static bool comprobarTokenValido(Peticion peticionActual, ConexionUsuarios conexUsuarios, HttpListenerResponse response)
