@@ -458,6 +458,42 @@ namespace ServidorConexion.Metodos
 
 
         }
+        public bool borrarTokenTodos()
+        {
+            conectar();
+            MySqlCommand cmd = new MySqlCommand();
+            cmd.CommandText = "Select Token from credenciales";
+            cmd.Connection = conexion;
+            MySqlDataReader login = cmd.ExecuteReader();
+            if (login.Read())
+            {
+                conexion.Close();
+                lock (bloqueo)
+                {
+                    conectar();
+                    cmd = new MySqlCommand();
+                    string sql = "UPDATE credenciales SET Token = ''";
+                    cmd.CommandText = sql;
+                    cmd.Connection = conexion;
+                    if (cmd.ExecuteNonQuery() > 0) // El token se ha borrado
+                    {
+                        conexion.Close();
+                        return true;
+                    }
+                    else
+                    {
+                        conexion.Close();
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                conexion.Close();
+                return true;
+            }
+            
+        }
 
     }
 }

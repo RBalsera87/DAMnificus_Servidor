@@ -23,7 +23,7 @@ namespace ServidorConexion
             {
                 try
                 {
-                    ConsolaDebug.escribirEnConsola("DEBUG", "Servidor iniciado");
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Modo debug activado");
                     ConsolaDebug.escribirEnConsola("INFO", "Servidor iniciado");
                     string ip = ConfigurationManager.AppSettings["serverIp"];
                     string urlServidor = "http://" + ip + ":8080/damnificus/";
@@ -85,6 +85,11 @@ namespace ServidorConexion
                 {
                     // Stop listening for new clients.
                     httpListener.Close();
+                    Peticion borrado = new Peticion();
+                    borrado.peticion = "borrarTokenTodos";
+                    procesarPeticion(borrado, null);
+                    ConsolaDebug.escribirEnConsola("INFO+", "Reiniciando el servidor en 3 segundos...");
+                    Thread.Sleep(3000);
                 } 
             }
         }
@@ -94,32 +99,35 @@ namespace ServidorConexion
         public static void procesarPeticion(Peticion peticionActual, HttpListenerResponse response)
         {
             string nombreHilo = "";
+            string claveEncriptada;
+            ConexionUsuarios conexUsuarios;
+            ConexionEnlaces conexEnlaces;
             try
             {
-                if (peticionActual.clave != null)
+                conexUsuarios = new ConexionUsuarios();
+                conexEnlaces = new ConexionEnlaces();
+                if (peticionActual.peticion != "borrarTokenTodos")
                 {
-                    peticionActual.clave = CifradoJson.Descifrado(peticionActual.clave, peticionActual.peticion);
-                }
-                if (peticionActual.token != null)
-                {
-                    peticionActual.token = CifradoJson.Descifrado(peticionActual.token, peticionActual.peticion);
-                }
-                if (peticionActual.usuario != null)
-                {
-                    peticionActual.usuario = CifradoJson.Descifrado(peticionActual.usuario, peticionActual.peticion);
-                }
-                nombreHilo = peticionActual.peticion + "-" + peticionActual.usuario;
-                Thread.CurrentThread.Name = nombreHilo;
-                ConsolaDebug.escribirEnConsola("DEBUG", "Hilo creado con nombre: {0}", nombreHilo);
+                    if (peticionActual.clave != null)
+                    {
+                        peticionActual.clave = CifradoJson.Descifrado(peticionActual.clave, peticionActual.peticion);
+                    }
+                    if (peticionActual.token != null)
+                    {
+                        peticionActual.token = CifradoJson.Descifrado(peticionActual.token, peticionActual.peticion);
+                    }
+                    if (peticionActual.usuario != null)
+                    {
+                        peticionActual.usuario = CifradoJson.Descifrado(peticionActual.usuario, peticionActual.peticion);
+                    }
+                    nombreHilo = peticionActual.peticion + "-" + peticionActual.usuario;
+                    Thread.CurrentThread.Name = nombreHilo;
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Hilo creado con nombre: {0}", nombreHilo);
 
-                ConsolaDebug.escribirEnConsola("DEBUG", "Usuario descifrado: {0}", peticionActual.usuario);
-                ConsolaDebug.escribirEnConsola("DEBUG", "Contraseña descifrada: " + peticionActual.clave);
-                ConsolaDebug.escribirEnConsola("DEBUG", "Token descifrado: " + peticionActual.token);
-
-                ConexionUsuarios conexUsuarios = new ConexionUsuarios();
-                ConexionEnlaces conexEnlaces = new ConexionEnlaces();
-
-                string claveEncriptada;
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Usuario descifrado: {0}", peticionActual.usuario);
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Contraseña descifrada: " + peticionActual.clave);
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Token descifrado: " + peticionActual.token);
+                }
 
                 // Petición de STATUS por parte de cliente
                 if (peticionActual.peticion.Equals("status"))
@@ -531,10 +539,6 @@ namespace ServidorConexion
                                 enviarRespuesta("coleccionEnviada", null, null, JArray.FromObject(coleccion), response);
                                 ConsolaDebug.escribirEnConsola("INFO", "Colección usuarios enviada al cliente satisfactoriamente");
                             }
-                        }else
-                        {
-                            enviarRespuesta("coleccionEnviada", null, null, null, response);
-                            ConsolaDebug.escribirEnConsola("ERROR", "Petición de obtener colección usuarios por el usuario {0} rechazada por token invalido", peticionActual.usuario);
                         }
                     }else {
                         enviarRespuesta("coleccionEnviada", null, null, null, response);
@@ -808,6 +812,18 @@ namespace ServidorConexion
                     enviarRespuesta(null, null, null, null, response);
                     ConsolaDebug.escribirEnConsola("INFO", "Nota cambiada");
                 }
+                // Petición para cambiar la nota al usuario
+                else if (peticionActual.peticion.Equals("borrarTokenTodos"))
+                {
+                    ConsolaDebug.escribirEnConsola("INFO", "Error en el servidor, intentando limpiar los tokens...");
+                    if (conexUsuarios.borrarTokenTodos())
+                    {
+                        ConsolaDebug.escribirEnConsola("INFO+", "Limpieza de todos los token efectuada");
+                    }else
+                    {
+                        ConsolaDebug.escribirEnConsola("WARNING", "No se han podido limpiar los tokens de los usuarios");
+                    }
+                }
 
             }
             catch (Exception e)
@@ -868,6 +884,10 @@ namespace ServidorConexion
             catch (System.Net.HttpListenerException)
             {
                 ConsolaDebug.escribirEnConsola("WARNING", "Cliente desconectado, imposible enviar respuesta");
+            }
+            catch (Exception e)
+            {
+                ConsolaDebug.escribirEnConsola("ERROR", "Excepción en envío de respuesta:\n{0}", e.StackTrace);
             }
         }
         public static bool comprobarTokenValido(Peticion peticionActual, ConexionUsuarios conexUsuarios, HttpListenerResponse response)
