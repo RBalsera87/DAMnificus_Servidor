@@ -26,7 +26,7 @@ namespace ServidorConexion.Metodos
         }
         private static bool enviarEmail(string email, string asunto, string cuerpo)
         {
-            var fromAddress = new MailAddress("doomknight871@gmail.com", "DAMnificus Contacto"); // Cambiar esto
+            var fromAddress = new MailAddress("damnificusjovellanos@gmail.com", "DAMnificus Contacto"); // Cambiar esto
             const string fromPassword = "prodam$19"; // Cambiar esto
             var toAddress = new MailAddress(email);
             var smtp = new SmtpClient
@@ -50,7 +50,7 @@ namespace ServidorConexion.Metodos
                 {
                     ConsolaDebug.escribirEnConsola("INFO", "Comienzo del envio del email a traves de SSL...");
                     smtp.Send(message);
-                    ConsolaDebug.escribirEnConsola("INFO", "El email con el token se ha enviado satisfactoriamente!");
+                    ConsolaDebug.escribirEnConsola("INFO", "El email se ha enviado satisfactoriamente!");
                     return true;
                 }
                 catch (Exception e)
