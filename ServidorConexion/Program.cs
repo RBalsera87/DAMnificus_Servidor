@@ -85,6 +85,7 @@ namespace ServidorConexion
                 {
                     // Stop listening for new clients.
                     httpListener.Close();
+                    Thread.Sleep(3000);
                 } 
             }
         }
