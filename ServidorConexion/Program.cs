@@ -19,72 +19,73 @@ namespace ServidorConexion
             Console.Title = "DAMnificus Server";
             ConsolaDebug.cargarConsola();
             HttpListener httpListener = null;
-            try
+            while (true)
             {
-                ConsolaDebug.escribirEnConsola("DEBUG", "Servidor iniciado");
-                ConsolaDebug.escribirEnConsola("INFO", "Servidor iniciado");
-                string ip = ConfigurationManager.AppSettings["serverIp"];
-                string urlServidor = "http://" + ip + ":8080/damnificus/";
-                httpListener = new HttpListener
+                try
                 {
-                    Prefixes = { urlServidor },
-                };
-
-                httpListener.Start();
-                // Esperando sincrónicamente hasta que se reciba la solicitud del cliente para HTTP a través del puerto 8080
-                while (true)
-                {
-                    ConsolaDebug.escribirEnConsola("INFO", "Esperando petición de cliente...");
-                    var context = httpListener.GetContext();
-                    var request = context.Request;
-                    HttpListenerResponse response = context.Response;
-                    ConsolaDebug.escribirEnConsola("INFO", "¡Conectado con un cliente!");
-                    System.IO.Stream body = request.InputStream;
-                    System.Text.Encoding encoding = request.ContentEncoding;
-                    System.IO.StreamReader reader = new System.IO.StreamReader(body, encoding);
-                    if (request.ContentType != null)
+                    ConsolaDebug.escribirEnConsola("DEBUG", "Servidor iniciado");
+                    ConsolaDebug.escribirEnConsola("INFO", "Servidor iniciado");
+                    string ip = ConfigurationManager.AppSettings["serverIp"];
+                    string urlServidor = "http://" + ip + ":8080/damnificus/";
+                    httpListener = new HttpListener
                     {
-                        ConsolaDebug.escribirEnConsola("INFO", "Datos recibidos, leyendo...", request.ContentType);
-                        ConsolaDebug.escribirEnConsola("DEBUG", "Tipo de datos recibidos: {0}", request.ContentType);
-                    }
-                    else
-                    {
-                        ConsolaDebug.escribirEnConsola("WARNING", "Recibida peticion vacía");
-                    }
-                    ConsolaDebug.escribirEnConsola("DEBUG", "Start of client JSON data:");
-                    string datosJson = reader.ReadToEnd(); // Convierte los datos en una cadena.
-                    ConsolaDebug.escribirEnConsola("DEBUG", datosJson);
-                    ConsolaDebug.escribirEnConsola("DEBUG", "End of client data:");
-                    ConsolaDebug.escribirEnConsola("DEBUG", "Parseando la petición Json...");
-                    var objetoJSON = JObject.Parse(datosJson);
-                    ConsolaDebug.escribirEnConsola("DEBUG", "Peticion: {0}", (string)objetoJSON["peticion"]);
-                    ConsolaDebug.escribirEnConsola("DEBUG", "Usuario: {0}", (string)objetoJSON["usuario"]);
-                    ConsolaDebug.escribirEnConsola("DEBUG", "Contraseña: {0}", (string)objetoJSON["clave"]);
-                    ConsolaDebug.escribirEnConsola("DEBUG", "Token: {0}", (string)objetoJSON["token"]);
+                        Prefixes = { urlServidor },
+                    };
 
-                    // Serializa el objeto JSON en un objeto .NET
-                    Peticion peticionActual = objetoJSON.ToObject<Peticion>();
-                    // Procesa cada petición de forma asincrona en un threadpool                                                                        
-                    Task.Run(() => procesarPeticion(peticionActual, response)); 
-                    
+                    httpListener.Start();
+                    // Esperando sincrónicamente hasta que se reciba la solicitud del cliente para HTTP a través del puerto 8080
+                    while (true)
+                    {
+                        ConsolaDebug.escribirEnConsola("INFO", "Esperando petición de cliente...");
+                        var context = httpListener.GetContext();
+                        var request = context.Request;
+                        HttpListenerResponse response = context.Response;
+                        ConsolaDebug.escribirEnConsola("INFO", "¡Conectado con un cliente!");
+                        System.IO.Stream body = request.InputStream;
+                        System.Text.Encoding encoding = request.ContentEncoding;
+                        System.IO.StreamReader reader = new System.IO.StreamReader(body, encoding);
+                        if (request.ContentType != null)
+                        {
+                            ConsolaDebug.escribirEnConsola("INFO", "Datos recibidos, leyendo...", request.ContentType);
+                            ConsolaDebug.escribirEnConsola("DEBUG", "Tipo de datos recibidos: {0}", request.ContentType);
+                        }
+                        else
+                        {
+                            ConsolaDebug.escribirEnConsola("WARNING", "Recibida peticion vacía");
+                        }
+                        ConsolaDebug.escribirEnConsola("DEBUG", "Start of client JSON data:");
+                        string datosJson = reader.ReadToEnd(); // Convierte los datos en una cadena.
+                        ConsolaDebug.escribirEnConsola("DEBUG", datosJson);
+                        ConsolaDebug.escribirEnConsola("DEBUG", "End of client data:");
+                        ConsolaDebug.escribirEnConsola("DEBUG", "Parseando la petición Json...");
+                        var objetoJSON = JObject.Parse(datosJson);
+                        ConsolaDebug.escribirEnConsola("DEBUG", "Peticion: {0}", (string)objetoJSON["peticion"]);
+                        ConsolaDebug.escribirEnConsola("DEBUG", "Usuario: {0}", (string)objetoJSON["usuario"]);
+                        ConsolaDebug.escribirEnConsola("DEBUG", "Contraseña: {0}", (string)objetoJSON["clave"]);
+                        ConsolaDebug.escribirEnConsola("DEBUG", "Token: {0}", (string)objetoJSON["token"]);
+
+                        // Serializa el objeto JSON en un objeto .NET
+                        Peticion peticionActual = objetoJSON.ToObject<Peticion>();
+                        // Procesa cada petición de forma asincrona en un threadpool                                                                        
+                        Task.Run(() => procesarPeticion(peticionActual, response));
+
+                    }
                 }
-            }
-            catch (SocketException e)
-            {
-                ConsolaDebug.escribirEnConsola("ERROR", "El servidor ha petado debido a:");
-                Console.WriteLine("SocketException: {0}", e);
-            }
-            catch (Exception e)
-            {
-                ConsolaDebug.escribirEnConsola("ERROR", "El servidor ha petado debido a:");
-                Console.WriteLine("Exception: {0}", e);
-            }
-            finally
-            {
-                ConsolaDebug.escribirEnConsola("INFO", "Pulsa tecla intro para cerrar la ventana");
-                Console.Read();
-                // Stop listening for new clients.
-                httpListener.Close();
+                catch (SocketException e)
+                {
+                    ConsolaDebug.escribirEnConsola("ERROR", "El servidor ha petado debido a:");
+                    Console.WriteLine("SocketException: {0}", e);
+                }
+                catch (Exception e)
+                {
+                    ConsolaDebug.escribirEnConsola("ERROR", "El servidor ha petado debido a:");
+                    Console.WriteLine("Exception: {0}", e);
+                }
+                finally
+                {
+                    // Stop listening for new clients.
+                    httpListener.Close();
+                } 
             }
         }
        /*****************************************
