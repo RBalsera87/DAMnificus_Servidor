@@ -19,6 +19,7 @@ namespace ServidorConexion
             bool reinicio = false;
             Console.Title = "DAMnificus Server";
             ConsolaDebug.cargarConsola();
+            ConsolaDebug.escribirEnConsola("DEBUG", "Consola en modo debug activado");
             HttpListener httpListener = null;
             while (true)
             {
@@ -30,8 +31,6 @@ namespace ServidorConexion
                         borrado.peticion = "borrarTokenTodos";
                         procesarPeticion(borrado, null);
                     }
-                    
-                    ConsolaDebug.escribirEnConsola("DEBUG", "Modo debug activado");
                     ConsolaDebug.escribirEnConsola("INFO", "Servidor iniciado");
                     string ip = ConfigurationManager.AppSettings["serverIp"];
                     string urlServidor = "http://" + ip + ":8080/damnificus/";
@@ -61,10 +60,10 @@ namespace ServidorConexion
                         {
                             ConsolaDebug.escribirEnConsola("WARNING", "Recibida peticion vacía");
                         }
-                        ConsolaDebug.escribirEnConsola("DEBUG", "Start of client JSON data:");
+                        //ConsolaDebug.escribirEnConsola("DEBUG", "Start of client JSON data:");
                         string datosJson = reader.ReadToEnd(); // Convierte los datos en una cadena.
-                        ConsolaDebug.escribirEnConsola("DEBUG", datosJson);
-                        ConsolaDebug.escribirEnConsola("DEBUG", "End of client data:");
+                        //ConsolaDebug.escribirEnConsola("DEBUG", datosJson);
+                        //ConsolaDebug.escribirEnConsola("DEBUG", "End of client data:");
                         ConsolaDebug.escribirEnConsola("DEBUG", "Parseando la petición Json...");
                         var objetoJSON = JObject.Parse(datosJson);
                         ConsolaDebug.escribirEnConsola("DEBUG", "Peticion: {0}", (string)objetoJSON["peticion"]);
@@ -89,7 +88,7 @@ namespace ServidorConexion
                     ConsolaDebug.escribirEnConsola("ERROR", "El servidor ha petado debido a un error de red:");
                     Console.WriteLine("SocketException: {0}", hle);
                     ConsolaDebug.escribirEnConsola("WARNING", "¿Se ha cargado el servidor con privilegios de administrador?");
-                    ConsolaDebug.escribirEnConsola("INFO", "Si el servidor esta en red abre el ejecutable como administrador");
+                    ConsolaDebug.escribirEnConsola("INFO", "Si el servidor esta en una red de área local abre el ejecutable como administrador");
                 }
                 catch (Exception e)
                 {
@@ -136,9 +135,9 @@ namespace ServidorConexion
                     Thread.CurrentThread.Name = nombreHilo;
                     ConsolaDebug.escribirEnConsola("DEBUG", "Hilo creado con nombre: {0}", nombreHilo);
 
-                    ConsolaDebug.escribirEnConsola("DEBUG", "Usuario descifrado: {0}", peticionActual.usuario);
-                    ConsolaDebug.escribirEnConsola("DEBUG", "Contraseña descifrada: " + peticionActual.clave);
-                    ConsolaDebug.escribirEnConsola("DEBUG", "Token descifrado: " + peticionActual.token);
+                    //ConsolaDebug.escribirEnConsola("DEBUG", "Usuario descifrado: {0}", peticionActual.usuario);
+                    //ConsolaDebug.escribirEnConsola("DEBUG", "Contraseña descifrada: " + peticionActual.clave);
+                    //ConsolaDebug.escribirEnConsola("DEBUG", "Token descifrado: " + peticionActual.token);
                 }
 
                 // Petición de STATUS por parte de cliente
