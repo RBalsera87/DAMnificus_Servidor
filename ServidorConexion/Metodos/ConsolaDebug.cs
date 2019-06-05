@@ -36,6 +36,7 @@ namespace ServidorConexion.Metodos
         {
             string debugConfig = ConfigurationManager.AppSettings["debugConsole"];
             debugActivado = Convert.ToBoolean(debugConfig); // Activa o desactiva los mensajes de depuración en la consola
+            Console.Clear();
             Console.SetWindowSize(120, 35);
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine(" _____   _______  _______         __   ___  __                       _______\n" +

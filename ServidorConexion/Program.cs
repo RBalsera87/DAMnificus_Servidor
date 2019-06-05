@@ -16,6 +16,7 @@ namespace ServidorConexion
     {
         static void Main(string[] args)
         {
+            bool reinicio = false;
             Console.Title = "DAMnificus Server";
             ConsolaDebug.cargarConsola();
             HttpListener httpListener = null;
@@ -23,6 +24,13 @@ namespace ServidorConexion
             {
                 try
                 {
+                    if (reinicio)
+                    {
+                        Peticion borrado = new Peticion();
+                        borrado.peticion = "borrarTokenTodos";
+                        procesarPeticion(borrado, null);
+                    }
+                    
                     ConsolaDebug.escribirEnConsola("DEBUG", "Modo debug activado");
                     ConsolaDebug.escribirEnConsola("INFO", "Servidor iniciado");
                     string ip = ConfigurationManager.AppSettings["serverIp"];
@@ -71,10 +79,17 @@ namespace ServidorConexion
 
                     }
                 }
-                catch (SocketException e)
+                catch (SocketException se)
                 {
-                    ConsolaDebug.escribirEnConsola("ERROR", "El servidor ha petado debido a:");
-                    Console.WriteLine("SocketException: {0}", e);
+                    ConsolaDebug.escribirEnConsola("ERROR", "El servidor ha petado debido a un error de red:");
+                    Console.WriteLine("SocketException: {0}", se);
+                }
+                catch (HttpListenerException hle)
+                {
+                    ConsolaDebug.escribirEnConsola("ERROR", "El servidor ha petado debido a un error de red:");
+                    Console.WriteLine("SocketException: {0}", hle);
+                    ConsolaDebug.escribirEnConsola("WARNING", "¿Se ha cargado el servidor con privilegios de administrador?");
+                    ConsolaDebug.escribirEnConsola("INFO", "Si el servidor esta en red abre el ejecutable como administrador");
                 }
                 catch (Exception e)
                 {
@@ -85,10 +100,7 @@ namespace ServidorConexion
                 {
                     // Stop listening for new clients.
                     httpListener.Close();
-                    Peticion borrado = new Peticion();
-                    borrado.peticion = "borrarTokenTodos";
-                    procesarPeticion(borrado, null);
-                    ConsolaDebug.escribirEnConsola("INFO+", "Reiniciando el servidor en 3 segundos...");
+                    ConsolaDebug.escribirEnConsola("INFO+", "Reiniciando el servidor en 3 segundos... (Pulsa CTRL+C para salir)");
                     Thread.Sleep(3000);
                 } 
             }
@@ -312,35 +324,38 @@ namespace ServidorConexion
                 //Cambia la columna Activo de la tabla Enlaces
                 else if (peticionActual.peticion.Equals("cambiarActivoRevisionDesactivo")){
                     ConsolaDebug.escribirEnConsola("INFO+", "Recibida peticion de cambiar estado Activo/Desactivo/Revisión por el usuario {0}", peticionActual.usuario);
-
-                    int id = int.Parse(peticionActual.datos["id"]);
-                    string credenciales = peticionActual.datos["credenciales"];
-                    var actualizado = conexEnlaces.cambiarActivoRevisionDesactivo(id, credenciales);
-                    if (actualizado["estado"] != -1)
+                    if (comprobarTokenValido(peticionActual, conexUsuarios, response))
                     {
-                        if (actualizado["email"] == 1)
+                        int id = int.Parse(peticionActual.datos["id"]);
+                        string credenciales = peticionActual.datos["credenciales"];
+                        var actualizado = conexEnlaces.cambiarActivoRevisionDesactivo(id, credenciales);
+                        if (actualizado["estado"] != -1)
                         {
-                            string email = "damnificusjovellanos@gmail.com";
-                            EnviarEmail.reporte(peticionActual.usuario, email, "Link caído","El link con id " + id + " ha sido reportado como caido por el usuario " + peticionActual.usuario +". Revísenlo.");                        
-                        }
+                            if (actualizado["email"] == 1)
+                            {
+                                string email = "damnificusjovellanos@gmail.com";
+                                EnviarEmail.reporte(peticionActual.usuario, email, "Link caído", "El link con id " + id + " ha sido reportado como caido por el usuario " + peticionActual.usuario + ". Revísenlo.");
+                            }
 
-                        string estado = "";
-                        if(actualizado["estado"] == 0)
-                        {
-                            estado = "Caido";
-                        }else if(actualizado["estado"] == 1)
-                        {
-                            estado = "Activo";
-                        }
-                        else { estado = "Revision"; }
+                            string estado = "";
+                            if (actualizado["estado"] == 0)
+                            {
+                                estado = "Caido";
+                            }
+                            else if (actualizado["estado"] == 1)
+                            {
+                                estado = "Activo";
+                            }
+                            else { estado = "Revision"; }
 
-                        enviarRespuesta(actualizado["estado"].ToString(), null, null, null, response);
-                        ConsolaDebug.escribirEnConsola("INFO", "Actualización de la columna Activo del enlace con id " + id + " a estado '" + estado + "' realizada correctamente");
-                    }
-                    else
-                    {
-                        enviarRespuesta(actualizado["estado"].ToString(), null, null, null, response);
-                        ConsolaDebug.escribirEnConsola("ERROR", "Actualización de la columna Activo del enlace con id '" + id + "' incorrecta");
+                            enviarRespuesta(actualizado["estado"].ToString(), null, null, null, response);
+                            ConsolaDebug.escribirEnConsola("INFO", "Actualización de la columna Activo del enlace con id " + id + " a estado '" + estado + "' realizada correctamente");
+                        }
+                        else
+                        {
+                            enviarRespuesta(actualizado["estado"].ToString(), null, null, null, response);
+                            ConsolaDebug.escribirEnConsola("ERROR", "Actualización de la columna Activo del enlace con id '" + id + "' incorrecta");
+                        }
                     }
                 }
 
@@ -826,15 +841,25 @@ namespace ServidorConexion
                 }
 
             }
+            catch (MySql.Data.MySqlClient.MySqlException me)
+            {
+                ConsolaDebug.escribirEnConsola("ERROR", "Error procesando la peticion {0}", peticionActual.peticion);
+                Console.WriteLine("Exception: {0}", me);
+                ConsolaDebug.escribirEnConsola("WARNING", "¡Atención! ¿Esta XAMPP corriendo en el equipo?");
+                ConsolaDebug.escribirEnConsola("WARNING", "Cerrando hilo de petición...");
+                Thread.CurrentThread.Abort();
+
+            }
             catch (Exception e)
             {
                 ConsolaDebug.escribirEnConsola("ERROR", "Error procesando la peticion {0}", peticionActual.peticion);
                 Console.WriteLine("Exception: {0}", e);
                 ConsolaDebug.escribirEnConsola("WARNING", "Cerrando hilo de petición...");
                 Thread.CurrentThread.Abort();
+
             }
             finally
-            {
+            {          
                 ConsolaDebug.escribirEnConsola("DEBUG", "Hilo {0} finalizado", nombreHilo);
             }
             
