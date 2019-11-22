@@ -16,7 +16,6 @@ namespace ServidorConexion
     {
         static void Main(string[] args)
         {
-            bool reinicio = false;
             Console.Title = "DAMnificus Server";
             ConsolaDebug.cargarConsola();
             ConsolaDebug.escribirEnConsola("DEBUG", "Consola en modo debug activado");
@@ -24,13 +23,10 @@ namespace ServidorConexion
             while (true)
             {
                 try
-                {
-                    if (reinicio)
-                    {
-                        Peticion borrado = new Peticion();
-                        borrado.peticion = "borrarTokenTodos";
-                        procesarPeticion(borrado, null);
-                    }
+                {                    
+                    Peticion borrado = new Peticion();
+                    borrado.peticion = "borrarTokenTodos";
+                    procesarPeticion(borrado, null);                    
                     ConsolaDebug.escribirEnConsola("INFO", "Servidor iniciado");
                     string ip = ConfigurationManager.AppSettings["serverIp"];
                     string urlServidor = "http://" + ip + ":8080/damnificus/";
@@ -829,7 +825,7 @@ namespace ServidorConexion
                 // Petición para cambiar la nota al usuario
                 else if (peticionActual.peticion.Equals("borrarTokenTodos"))
                 {
-                    ConsolaDebug.escribirEnConsola("INFO", "Error en el servidor, intentando limpiar los tokens...");
+                    ConsolaDebug.escribirEnConsola("INFO", "Limpiando los tokens invalidos de la BD...");
                     if (conexUsuarios.borrarTokenTodos())
                     {
                         ConsolaDebug.escribirEnConsola("INFO+", "Limpieza de todos los token efectuada");
